@@ -29,7 +29,8 @@ export const GetUserProfileResponse = zod.object({
   "kycVerified": zod.boolean(),
   "memberSince": zod.string(),
   "investorLevel": zod.string(),
-  "referralCount": zod.number()
+  "referralCount": zod.number(),
+  "referralCode": zod.string().optional()
 })
 
 
@@ -52,7 +53,8 @@ export const UpdateUserProfileResponse = zod.object({
   "kycVerified": zod.boolean(),
   "memberSince": zod.string(),
   "investorLevel": zod.string(),
-  "referralCount": zod.number()
+  "referralCount": zod.number(),
+  "referralCode": zod.string().optional()
 })
 
 

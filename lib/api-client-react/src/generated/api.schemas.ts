@@ -20,6 +20,7 @@ export interface UserProfile {
   memberSince: string;
   investorLevel: string;
   referralCount: number;
+  referralCode?: string;
 }
 
 export interface UserProfileUpdate {

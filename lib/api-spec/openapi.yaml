@@ -364,6 +364,8 @@ components:
           type: string
         referralCount:
           type: integer
+        referralCode:
+          type: string
       required: [id, displayName, email, kycVerified, memberSince, investorLevel, referralCount]
 
     UserProfileUpdate:

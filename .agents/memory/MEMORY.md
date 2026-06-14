@@ -1,0 +1,4 @@
+- [DB migration quirk](db-migration-quirk.md) — drizzle-kit push fails non-interactively; use psql for CI/non-TTY schema changes.
+- [Firebase Auth setup](firebase-auth-setup.md) — frontend uses Firebase SDK; backend uses firebase-admin with applicationDefault() credential.
+- [Referral + withdrawal unlock](referral-withdrawal.md) — withdrawals require 5 referrals, enforced server-side in wallet route.
+- [Admin access](admin-access.md) — admin email hardcoded as officialzoom200@gmail.com in both frontend Admin.tsx and api-server admin.ts.

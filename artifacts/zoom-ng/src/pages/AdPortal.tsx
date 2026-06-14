@@ -32,7 +32,7 @@ export default function AdPortal() {
 
   const handleAdSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adForm.title) return toast({ title: "Title required", variant: "destructive" });
+    if (!adForm.title) { toast({ title: "Title required", variant: "destructive" }); return; }
 
     submitAd.mutate({
       data: { ...adForm, cost: adCost }

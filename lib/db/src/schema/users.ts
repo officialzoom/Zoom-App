@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),
+  firebaseUid: text("firebase_uid").unique(),
   displayName: text("display_name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone"),
@@ -12,7 +13,11 @@ export const usersTable = pgTable("users", {
   kycVerified: boolean("kyc_verified").notNull().default(false),
   memberSince: text("member_since").notNull(),
   investorLevel: text("investor_level").notNull().default("Bronze"),
+  referralCode: text("referral_code").unique(),
+  referredBy: text("referred_by"),
   referralCount: integer("referral_count").notNull().default(0),
+  banned: boolean("banned").notNull().default(false),
+  bannedReason: text("banned_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

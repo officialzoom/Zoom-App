@@ -7,6 +7,8 @@ import investmentsRouter from "./investments";
 import dashboardRouter from "./dashboard";
 import adsRouter from "./ads";
 import donationsRouter from "./donations";
+import adminRouter from "./admin";
+import supportRouter from "./support";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use("/investments", investmentsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/ads", adsRouter);
 router.use("/donations", donationsRouter);
+router.use("/admin", adminRouter);
+router.use("/support", supportRouter);
 
 export default router;
