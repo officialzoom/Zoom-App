@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Zoom NG - Vehicle Investment Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: user
+    description: User profile operations
+  - name: wallet
+    description: Wallet and transaction operations
+  - name: investments
+    description: Investment operations
+  - name: assets
+    description: Vehicle asset tiers
+  - name: ads
+    description: Advertisement operations
+  - name: donations
+    description: Donation campaign operations
+  - name: dashboard
+    description: Dashboard summary data
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,301 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /user/profile:
+    get:
+      operationId: getUserProfile
+      tags: [user]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    patch:
+      operationId: updateUserProfile
+      tags: [user]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [wallet]
+      summary: Get wallet balance and stats
+      responses:
+        "200":
+          description: Wallet data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/topup:
+    post:
+      operationId: topUpWallet
+      tags: [wallet]
+      summary: Top up wallet balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletTopup"
+      responses:
+        "200":
+          description: Updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/withdraw:
+    post:
+      operationId: withdrawFromWallet
+      tags: [wallet]
+      summary: Withdraw from wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletWithdraw"
+      responses:
+        "200":
+          description: Updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/transactions:
+    get:
+      operationId: getTransactions
+      tags: [wallet]
+      summary: Get transaction history
+      responses:
+        "200":
+          description: Transactions list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /wallet/banks:
+    get:
+      operationId: getBanks
+      tags: [wallet]
+      summary: Get linked bank accounts
+      responses:
+        "200":
+          description: Bank accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankAccount"
+    post:
+      operationId: addBank
+      tags: [wallet]
+      summary: Add a bank account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountInput"
+      responses:
+        "201":
+          description: Added bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccount"
+
+  /wallet/banks/{bankId}:
+    delete:
+      operationId: removeBank
+      tags: [wallet]
+      summary: Remove a bank account
+      parameters:
+        - name: bankId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+
+  /assets:
+    get:
+      operationId: getAssets
+      tags: [assets]
+      summary: Get all vehicle asset tiers
+      responses:
+        "200":
+          description: Asset tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetTier"
+
+  /investments:
+    get:
+      operationId: getInvestments
+      tags: [investments]
+      summary: Get user's active investments
+      responses:
+        "200":
+          description: Investments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Investment"
+    post:
+      operationId: createInvestment
+      tags: [investments]
+      summary: Create a new investment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentInput"
+      responses:
+        "201":
+          description: Created investment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Investment"
+
+  /investments/{investmentId}:
+    get:
+      operationId: getInvestment
+      tags: [investments]
+      summary: Get a single investment
+      parameters:
+        - name: investmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Investment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Investment"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /ads:
+    get:
+      operationId: getAds
+      tags: [ads]
+      summary: Get user's submitted ads
+      responses:
+        "200":
+          description: Ads list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ad"
+    post:
+      operationId: submitAd
+      tags: [ads]
+      summary: Submit a new ad campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdInput"
+      responses:
+        "201":
+          description: Submitted ad
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ad"
+
+  /donations:
+    get:
+      operationId: getDonationCampaigns
+      tags: [donations]
+      summary: Get all donation campaigns
+      responses:
+        "200":
+          description: Campaigns list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationCampaign"
+
+  /donations/{campaignId}/donate:
+    post:
+      operationId: makeDonation
+      tags: [donations]
+      summary: Make a donation to a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationInput"
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationCampaign"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +339,261 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        avatarInitials:
+          type: string
+        kycVerified:
+          type: boolean
+        memberSince:
+          type: string
+        investorLevel:
+          type: string
+        referralCount:
+          type: integer
+      required: [id, displayName, email, kycVerified, memberSince, investorLevel, referralCount]
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: number
+        activeInvestmentsValue:
+          type: number
+        totalEarnings:
+          type: number
+        weeklyChange:
+          type: number
+      required: [balance, activeInvestmentsValue, totalEarnings, weeklyChange]
+
+    WalletTopup:
+      type: object
+      properties:
+        amount:
+          type: number
+      required: [amount]
+
+    WalletWithdraw:
+      type: object
+      properties:
+        amount:
+          type: number
+        bankId:
+          type: string
+      required: [amount, bankId]
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [return, deposit, invest, withdrawal]
+        label:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+        status:
+          type: string
+          enum: [completed, active, pending]
+      required: [id, type, label, amount, date, status]
+
+    BankAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        bankName:
+          type: string
+        accountName:
+          type: string
+        accountNumber:
+          type: string
+        logo:
+          type: string
+        color:
+          type: string
+        bgColor:
+          type: string
+      required: [id, bankName, accountName, accountNumber, logo, color, bgColor]
+
+    BankAccountInput:
+      type: object
+      properties:
+        bankName:
+          type: string
+        accountName:
+          type: string
+        accountNumber:
+          type: string
+      required: [bankName, accountName, accountNumber]
+
+    AssetTier:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        category:
+          type: string
+        entryAmount:
+          type: number
+        returnRate:
+          type: number
+        durationDays:
+          type: integer
+        slotsUsed:
+          type: integer
+        totalSlots:
+          type: integer
+        tag:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        bgColor:
+          type: string
+      required: [id, label, category, entryAmount, returnRate, durationDays, slotsUsed, totalSlots, tag, description, color, bgColor]
+
+    Investment:
+      type: object
+      properties:
+        id:
+          type: string
+        assetId:
+          type: string
+        assetLabel:
+          type: string
+        amount:
+          type: number
+        expectedPayout:
+          type: number
+        returnRate:
+          type: number
+        status:
+          type: string
+          enum: [active, completed, pending]
+        startDate:
+          type: string
+        endDate:
+          type: string
+      required: [id, assetId, assetLabel, amount, expectedPayout, returnRate, status, startDate, endDate]
+
+    InvestmentInput:
+      type: object
+      properties:
+        assetId:
+          type: string
+        amount:
+          type: number
+        lockDays:
+          type: integer
+      required: [assetId, amount, lockDays]
+
+    DashboardSummary:
+      type: object
+      properties:
+        walletBalance:
+          type: number
+        activeInvestmentsValue:
+          type: number
+        weeklyChange:
+          type: number
+        totalEarnings:
+          type: number
+        activeInvestmentsCount:
+          type: integer
+        completedInvestmentsCount:
+          type: integer
+        recentTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+      required: [walletBalance, activeInvestmentsValue, weeklyChange, totalEarnings, activeInvestmentsCount, completedInvestmentsCount, recentTransactions]
+
+    Ad:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        audience:
+          type: string
+        duration:
+          type: string
+        cost:
+          type: number
+        status:
+          type: string
+          enum: [pending, active, completed]
+        submittedAt:
+          type: string
+      required: [id, title, audience, duration, cost, status, submittedAt]
+
+    AdInput:
+      type: object
+      properties:
+        title:
+          type: string
+        targetUrl:
+          type: string
+        audience:
+          type: string
+        duration:
+          type: string
+        cost:
+          type: number
+      required: [title, audience, duration, cost]
+
+    DonationCampaign:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        targetAmount:
+          type: number
+        raisedAmount:
+          type: number
+        color:
+          type: string
+      required: [id, title, description, targetAmount, raisedAmount, color]
+
+    DonationInput:
+      type: object
+      properties:
+        amount:
+          type: number
+      required: [amount]

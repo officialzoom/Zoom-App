@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface Wallet {
+  balance: number;
+  activeInvestmentsValue: number;
+  totalEarnings: number;
+  weeklyChange: number;
 }
