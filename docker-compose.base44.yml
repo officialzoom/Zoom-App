@@ -54,6 +54,7 @@ services:
       - DATABASE_URL=postgres://zoom:zoom@db:5432/zoom
       - NODE_ENV=development
     env_file:
+      - ./.env.base44-defaults
       - /run/base44/app.env
     depends_on:
       db:
