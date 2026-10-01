@@ -1,0 +1,104 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: zoom
+      POSTGRES_PASSWORD: zoom
+      POSTGRES_DB: zoom
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zoom"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: on-failure
+
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - pnpm-store:/root/.local/share/pnpm
+    command: ["sh", "-ec", "pnpm install --frozen-lockfile"]
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - pnpm-store:/root/.local/share/pnpm
+    environment:
+      - DATABASE_URL=postgres://zoom:zoom@db:5432/zoom
+    depends_on:
+      db:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    command: ["sh", "-ec", "pnpm --filter @workspace/db run push-force"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - pnpm-store:/root/.local/share/pnpm
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgres://zoom:zoom@db:5432/zoom
+      - NODE_ENV=development
+    env_file:
+      - /run/base44/app.env
+    depends_on:
+      db:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    command: ["sh", "-ec", "pnpm --filter @workspace/api-server run dev"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/api/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: on-failure
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - pnpm-store:/root/.local/share/pnpm
+    ports:
+      - "3000:5173"
+    environment:
+      - PORT=5173
+      - API_PROXY_TARGET=http://api:3001
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["sh", "-ec", "pnpm --filter @workspace/zoom-ng run dev"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5173/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+
+volumes:
+  pgdata:
+  pnpm-store:
