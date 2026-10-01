@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   const featuredAssets = Array.isArray(assets) ? assets.slice(0, 3) : [];
   const recentTransactions = Array.isArray(summary?.recentTransactions)
-    ? summary.recentTransactions
+    ? summary.recentTransactions.filter(Boolean)
     : [];
 
   return (

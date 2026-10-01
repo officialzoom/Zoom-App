@@ -37,22 +37,24 @@ const VEHICLE_CATALOG: Record<string, { name: string; images: string[]; desc: st
 };
 
 function VehicleGallery({ images, name }: { images: string[]; name: string }) {
+  const safeImages = Array.isArray(images) && images.length > 0 ? images : ["https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80"];
   const [idx, setIdx] = useState(0);
+  const safeIndex = Math.min(idx, safeImages.length - 1);
   return (
     <div className="relative w-full h-44 rounded-xl overflow-hidden bg-gray-100 group">
-      <img src={images[idx]} alt={name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80"; }} />
-      {images.length > 1 && (
+      <img src={safeImages[safeIndex]} alt={name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80"; }} />
+      {safeImages.length > 1 && (
         <>
-          <button onClick={e => { e.stopPropagation(); setIdx((idx - 1 + images.length) % images.length); }}
+          <button onClick={e => { e.stopPropagation(); setIdx((safeIndex - 1 + safeImages.length) % safeImages.length); }}
             className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button onClick={e => { e.stopPropagation(); setIdx((idx + 1) % images.length); }}
+          <button onClick={e => { e.stopPropagation(); setIdx((safeIndex + 1) % safeImages.length); }}
             className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
             <ChevronRight className="w-4 h-4" />
           </button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {images.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? "bg-white" : "bg-white/50"}`} />)}
+            {safeImages.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? "bg-white" : "bg-white/50"}`} />)}
           </div>
         </>
       )}
@@ -77,10 +79,14 @@ export default function ExploreAssets() {
   const catMap: Record<string, string> = { "Cars": "car", "Buses & Vans": "bus", "Trucks": "truck" };
   const catFilter = catMap[filter] || null;
 
-  const availableAssets = Array.isArray(assets) ? assets : [];
+  const availableAssets = Array.isArray(assets) ? assets.filter(Boolean) : [];
   const filteredAssets = availableAssets.filter(a => {
-    const ms = a.label.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase());
-    const mc = !catFilter || a.category.toLowerCase() === catFilter;
+    const label = typeof a.label === "string" ? a.label : "";
+    const description = typeof a.description === "string" ? a.description : "";
+    const category = typeof a.category === "string" ? a.category : "";
+    const query = search.toLowerCase();
+    const ms = label.toLowerCase().includes(query) || description.toLowerCase().includes(query);
+    const mc = !catFilter || category.toLowerCase() === catFilter;
     return ms && mc;
   });
 
