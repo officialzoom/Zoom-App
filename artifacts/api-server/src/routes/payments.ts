@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
-import { db, walletsTable, transactionsTable, usersTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { randomUUID } from "crypto";
+import admin from "firebase-admin";
 
 const router = Router();
 
@@ -16,33 +15,13 @@ function getSquadConfig() {
   return { secretKey, baseUrl };
 }
 
-async function getUserId(firebaseUid: string): Promise<string | null> {
-  const user = await db
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .where(eq(usersTable.firebaseUid, firebaseUid))
-    .limit(1);
-  return user[0]?.id ?? null;
-}
-
 /**
  * POST /api/wallet/fund — initiate a SquadCo payment for wallet top-up.
- * Returns a checkout_url the frontend redirects to.
  */
 router.post("/fund", requireAuth, async (req, res) => {
   try {
-    const userId = await getUserId(req.userId!);
+    const userId = req.userId; 
     if (!userId) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
-    const user = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-      .limit(1);
-    if (!user.length) {
       res.status(404).json({ error: "User not found" });
       return;
     }
@@ -56,9 +35,7 @@ router.post("/fund", requireAuth, async (req, res) => {
 
     const { secretKey, baseUrl } = getSquadConfig();
     if (!secretKey) {
-      res
-        .status(503)
-        .json({ error: "Payment gateway not configured. Contact admin." });
+      res.status(503).json({ error: "Payment gateway not configured. Contact admin." });
       return;
     }
 
@@ -72,13 +49,13 @@ router.post("/fund", requireAuth, async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: Math.round(naira * 100), // SquadCo expects kobo
-        email: user[0].email,
+        amount: Math.round(naira * 100), 
+        email: req.userEmail || "customer@example.com",
         currency: "NGN",
         initiate_type: "inline",
         transaction_ref: transactionRef,
         callback_url: callbackUrl,
-        customer_name: user[0].displayName,
+        customer_name: "User",
         payment_channels: ["card", "transfer", "ussd", "bank"],
         metadata: { userId, type: "wallet_fund" },
       }),
@@ -87,10 +64,6 @@ router.post("/fund", requireAuth, async (req, res) => {
     const squadData = (await squadRes.json()) as any;
 
     if (!squadRes.ok || !squadData.data?.checkout_url) {
-      req.log.error(
-        { squadStatus: squadRes.status, squadData },
-        "SquadCo initiate failed",
-      );
       res.status(502).json({
         error: squadData.message || "Failed to initiate payment",
       });
@@ -102,23 +75,15 @@ router.post("/fund", requireAuth, async (req, res) => {
       transactionRef,
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to initiate wallet funding");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
 /**
- * GET /api/wallet/fund/verify/:transactionRef — verify a SquadCo payment
- * and credit the user's wallet if successful.
+ * GET /api/wallet/fund/verify/:transactionRef — verify a SquadCo payment.
  */
 router.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
   try {
-    const userId = await getUserId(req.userId!);
-    if (!userId) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
     const { transactionRef } = req.params;
     const { secretKey, baseUrl } = getSquadConfig();
     if (!secretKey) {
@@ -154,54 +119,87 @@ router.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
       return;
     }
 
-    // Amount from SquadCo is in kobo; convert to naira.
     const amountNaira = Number(squadData.data.transaction_amount) / 100;
+    const userId = req.userId;
 
-    // Check for duplicate crediting.
-    const existing = await db
-      .select()
-      .from(transactionsTable)
-      .where(eq(transactionsTable.label, `Wallet Top-up — ${transactionRef}`))
-      .limit(1);
-    if (existing.length) {
-      res.json({ verified: true, alreadyCredited: true, balance: null });
-      return;
+    if (userId) {
+      const walletRef = admin.firestore().collection("wallets").doc(userId);
+      await admin.firestore().runTransaction(async (transaction) => {
+        const walletDoc = await transaction.get(walletRef);
+        const currentBalance = walletDoc.data()?.balance || 0;
+        transaction.set(walletRef, { 
+          balance: currentBalance + amountNaira 
+        }, { merge: true });
+      });
     }
-
-    const wallet = await db
-      .select()
-      .from(walletsTable)
-      .where(eq(walletsTable.userId, userId))
-      .limit(1);
-    if (!wallet.length) {
-      res.status(404).json({ error: "Wallet not found" });
-      return;
-    }
-
-    const newBalance = Number(wallet[0].balance) + amountNaira;
-    const updated = await db
-      .update(walletsTable)
-      .set({ balance: String(newBalance) })
-      .where(eq(walletsTable.userId, userId))
-      .returning();
-
-    await db.insert(transactionsTable).values({
-      id: randomUUID(),
-      userId,
-      type: "deposit",
-      label: `Wallet Top-up — ${transactionRef}`,
-      amount: String(amountNaira),
-      date: new Date().toISOString(),
-      status: "completed",
-    });
 
     res.json({
       verified: true,
-      balance: Number(updated[0].balance),
       amount: amountNaira,
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to verify payment");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * GET /api/wallet/banks — get user's linked bank accounts
+ */
+router.get("/banks", requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(404).json({ error: "User not found" });
+
+    const snapshot = await admin.firestore().collection("banks")
+      .where("userId", "==", userId)
+      .get();
+    
+    const banks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(banks);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * POST /api/wallet/banks — add a new bank account
+ */
+router.post("/banks", requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(404).json({ error: "User not found" });
+
+    const bankData = {
+      ...req.body,
+      userId,
+      createdAt: new Date().toISOString(),
+    };
+
+    const docRef = await admin.firestore().collection("banks").add(bankData);
+    res.status(201).json({ id: docRef.id, ...bankData });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * DELETE /api/wallet/banks/:bankId — remove a bank account
+ */
+router.delete("/banks/:bankId", requireAuth, async (req, res) => {
+  try {
+    const { bankId } = req.params;
+    const userId = req.userId;
+
+    const docRef = admin.firestore().collection("banks").doc(bankId);
+    const doc = await docRef.get();
+
+    if (!doc.exists || doc.data()?.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized to remove this account" });
+    }
+
+    await docRef.delete();
+    res.status(204).send();
+  } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
 });
