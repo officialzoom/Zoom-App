@@ -20,6 +20,8 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
         return <Minus className="w-5 h-5 text-orange-600" />;
       case "withdrawal":
         return <ArrowUpRight className="w-5 h-5 text-gray-600" />;
+      default:
+        return <ArrowUpRight className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -29,6 +31,7 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
       case "deposit": return "bg-blue-100";
       case "invest": return "bg-orange-100";
       case "withdrawal": return "bg-gray-100";
+      default: return "bg-gray-100";
     }
   };
 
