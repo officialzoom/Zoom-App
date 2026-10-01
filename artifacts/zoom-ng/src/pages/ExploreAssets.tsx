@@ -77,7 +77,8 @@ export default function ExploreAssets() {
   const catMap: Record<string, string> = { "Cars": "car", "Buses & Vans": "bus", "Trucks": "truck" };
   const catFilter = catMap[filter] || null;
 
-  const filteredAssets = assets?.filter(a => {
+  const availableAssets = Array.isArray(assets) ? assets : [];
+  const filteredAssets = availableAssets.filter(a => {
     const ms = a.label.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase());
     const mc = !catFilter || a.category.toLowerCase() === catFilter;
     return ms && mc;

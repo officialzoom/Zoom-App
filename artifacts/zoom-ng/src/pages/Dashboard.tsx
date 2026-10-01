@@ -13,8 +13,10 @@ export default function Dashboard() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary();
   const { data: assets, isLoading: isAssetsLoading } = useGetAssets();
 
-  const featuredAssets = assets?.slice(0, 3) || [];
-  const recentTransactions = summary?.recentTransactions ?? [];
+  const featuredAssets = Array.isArray(assets) ? assets.slice(0, 3) : [];
+  const recentTransactions = Array.isArray(summary?.recentTransactions)
+    ? summary.recentTransactions
+    : [];
 
   return (
     <div className="min-h-screen bg-background pb-20">
