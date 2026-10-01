@@ -14,6 +14,7 @@ export default function Dashboard() {
   const { data: assets, isLoading: isAssetsLoading } = useGetAssets();
 
   const featuredAssets = assets?.slice(0, 3) || [];
+  const recentTransactions = summary?.recentTransactions ?? [];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -69,9 +70,9 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-full h-16 rounded-2xl" />)}
                 </div>
-              ) : (summary.recentTransactions ?? []).length > 0 ? (
+              ) : recentTransactions.length > 0 ? (
                 <div className="space-y-2">
-                  {summary.recentTransactions.map(tx => (
+                  {recentTransactions.map(tx => (
                     <TransactionItem key={tx.id} transaction={tx} />
                   ))}
                 </div>
