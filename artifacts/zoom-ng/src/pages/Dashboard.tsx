@@ -69,7 +69,7 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-full h-16 rounded-2xl" />)}
                 </div>
-              ) : summary.recentTransactions.length > 0 ? (
+              ) : (summary.recentTransactions ?? []).length > 0 ? (
                 <div className="space-y-2">
                   {summary.recentTransactions.map(tx => (
                     <TransactionItem key={tx.id} transaction={tx} />
