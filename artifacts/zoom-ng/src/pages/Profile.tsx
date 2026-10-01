@@ -17,7 +17,8 @@ export default function Profile() {
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const { data: banks, isLoading: banksLoading } = useGetBanks();
   const { data: wallet } = useGetWallet();
-
+  const availableBanks = Array.isArray(banks) ? banks : [];
+  
   const addBank = useAddBank();
   const removeBank = useRemoveBank();
   const withdraw = useWithdrawFromWallet();
@@ -189,7 +190,7 @@ export default function Profile() {
               )}
               <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full h-14 rounded-xl font-bold shadow-lg shadow-primary/20" disabled={!banks?.length || !canWithdraw}>
+                  <Button className="w-full h-14 rounded-xl font-bold shadow-lg shadow-primary/20" disabled={!availableBanks.length || !canWithdraw}>
                     {canWithdraw ? "Request Withdrawal" : `Need ${referralsNeeded} More Referral${referralsNeeded !== 1 ? "s" : ""}`}
                   </Button>
                 </DialogTrigger>
@@ -198,7 +199,7 @@ export default function Profile() {
                   <form onSubmit={handleWithdraw} className="space-y-4 mt-4">
                     <div className="space-y-2">
                       <Label>Select Bank Account</Label>
-                      {banks?.map(bank => (
+                      {availableBanks.map(bank => (
                         <div key={bank.id} onClick={() => setWithdrawForm({ ...withdrawForm, bankId: bank.id })}
                           className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${withdrawForm.bankId === bank.id ? "border-primary bg-primary/5" : "border-gray-100 hover:border-gray-200"}`}>
                           <p className="font-semibold text-sm">{bank.bankName}</p>
@@ -260,9 +261,9 @@ export default function Profile() {
 
               {banksLoading ? (
                 <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse"></div>)}</div>
-              ) : banks?.length ? (
+              ) : availableBanks.length ? (
                 <div className="space-y-3">
-                  {banks.map(bank => (
+                  {availableBanks.map(bank => (
                     <div key={bank.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm" style={{ backgroundColor: bank.bgColor, color: bank.color }}>
