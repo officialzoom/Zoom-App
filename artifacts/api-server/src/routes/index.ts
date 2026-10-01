@@ -9,6 +9,7 @@ import adsRouter from "./ads";
 import donationsRouter from "./donations";
 import adminRouter from "./admin";
 import supportRouter from "./support";
+import paymentsRouter from "./payments";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/ads", adsRouter);
 router.use("/donations", donationsRouter);
 router.use("/admin", adminRouter);
 router.use("/support", supportRouter);
+router.use("/wallet", paymentsRouter);
 
 export default router;
