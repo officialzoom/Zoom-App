@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "dev": "PORT=3000 pnpm --filter @workspace/zoom-ng dev",
     "preinstall": "echo 'Skipping preinstall'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
