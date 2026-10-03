@@ -32,6 +32,31 @@
       "name": "VITE_FIREBASE_APP_ID",
       "description": "Firebase App ID — from Firebase Console > Project Settings > General > Web app config",
       "requiredAtBoot": false
+    },
+    {
+      "name": "SQUADCO_SECRET_KEY",
+      "description": "SquadCo payment gateway secret key — from SquadCo dashboard > Settings > API",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "FIREBASE_PROJECT_ID",
+      "description": "Firebase Project ID for backend admin SDK — from Firebase Console > Project Settings > General",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "FIREBASE_CLIENT_EMAIL",
+      "description": "Firebase service account client email — from Firebase Console > Project Settings > Service Accounts > generate new private key JSON (client_email field)",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "FIREBASE_PRIVATE_KEY",
+      "description": "Firebase service account private key — from Firebase Console > Project Settings > Service Accounts > generate new private key JSON (private_key field). Use \\n for newlines.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "FIREBASE_DATABASE_URL",
+      "description": "Firebase Realtime Database URL (e.g. https://your-project-default-rtdb.firebaseio.com) — from Firebase Console > Realtime Database",
+      "requiredAtBoot": false
     }
   ]
 }
