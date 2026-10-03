@@ -20732,27 +20732,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router4;
+    module.exports = Router5;
     module.exports.Route = Route;
-    function Router4(options) {
-      if (!(this instanceof Router4)) {
-        return new Router4(options);
+    function Router5(options) {
+      if (!(this instanceof Router5)) {
+        return new Router5(options);
       }
       const opts = options || {};
-      function router4(req, res, next) {
-        router4.handle(req, res, next);
+      function router5(req, res, next) {
+        router5.handle(req, res, next);
       }
-      Object.setPrototypeOf(router4, this);
-      router4.caseSensitive = opts.caseSensitive;
-      router4.mergeParams = opts.mergeParams;
-      router4.params = {};
-      router4.strict = opts.strict;
-      router4.stack = [];
-      return router4;
+      Object.setPrototypeOf(router5, this);
+      router5.caseSensitive = opts.caseSensitive;
+      router5.mergeParams = opts.mergeParams;
+      router5.params = {};
+      router5.strict = opts.strict;
+      router5.stack = [];
+      return router5;
     }
-    Router4.prototype = function() {
+    Router5.prototype = function() {
     };
-    Router4.prototype.param = function param(name, fn) {
+    Router5.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20772,7 +20772,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router4.prototype.handle = function handle(req, res, callback) {
+    Router5.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20899,7 +20899,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router4.prototype.use = function use(handler) {
+    Router5.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20932,7 +20932,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router4.prototype.route = function route(path) {
+    Router5.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20947,7 +20947,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router4.prototype[method] = function(path) {
+      Router5.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21130,13 +21130,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router4 = require_router();
+    var Router5 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router4 = null;
+      var router5 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21145,13 +21145,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router4 === null) {
-            router4 = new Router4({
+          if (router5 === null) {
+            router5 = new Router5({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router4;
+          return router5;
         }
       });
     };
@@ -21222,15 +21222,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router4 = this.router;
+      var router5 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router4.use(path, fn2);
+          return router5.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router4.use(path, function mounted_app(req, res, next) {
+        router5.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23739,7 +23739,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router4 = require_router();
+    var Router5 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23761,8 +23761,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router4.Route;
-    exports.Router = Router4;
+    exports.Route = Router5.Route;
+    exports.Router = Router5;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -28621,12 +28621,12 @@ var require_logger = __commonJS({
 });
 
 // src/app.ts
-var import_express4 = __toESM(require_express2(), 1);
+var import_express5 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express3 = __toESM(require_express2(), 1);
+var import_express4 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -28762,14 +28762,112 @@ router2.delete("/banks/:bankId", requireAuth, async (req, res) => {
 });
 var payments_default = router2;
 
-// src/routes/index.ts
+// src/routes/assets.ts
+var import_express3 = __toESM(require_express2(), 1);
 var router3 = (0, import_express3.Router)();
-router3.use(health_default);
-router3.use("/wallet", payments_default);
-var routes_default = router3;
+var assetTiers = [
+  // ---- Cars / SUVs / Jeeps -------------------------------------------------
+  {
+    id: "car-suv-fleet",
+    label: "SUV & Jeep Executive Fleet",
+    category: "car",
+    entryAmount: 5e6,
+    returnRate: 16,
+    durationDays: 180,
+    slotsUsed: 2,
+    totalSlots: 10,
+    tag: "Executive",
+    description: "Ride-hailing and corporate hire fleet of Highlander, Prado, Lexus RX and Pathfinder units for Lagos & Abuja.",
+    color: "#10b981",
+    bgColor: "#ecfdf5"
+  },
+  {
+    id: "car-luxury-fleet",
+    label: "Executive Luxury SUV Fleet",
+    category: "car",
+    entryAmount: 1e7,
+    returnRate: 19,
+    durationDays: 270,
+    slotsUsed: 4,
+    totalSlots: 8,
+    tag: "Premium",
+    description: "Land Cruiser and Range Rover units for airport transfers and executive chauffeured mobility.",
+    color: "#8b5cf6",
+    bgColor: "#f5f3ff"
+  },
+  // ---- Buses & vans --------------------------------------------------------
+  {
+    id: "bus-city-fleet",
+    label: "City Route Mini-Bus Fleet",
+    category: "bus",
+    entryAmount: 18e5,
+    returnRate: 20,
+    durationDays: 180,
+    slotsUsed: 3,
+    totalSlots: 12,
+    tag: "High Yield",
+    description: "HiAce, Ford Transit and Hiace White units running busy intra-city routes and last-mile passenger transport.",
+    color: "#f59e0b",
+    bgColor: "#fffbeb"
+  },
+  {
+    id: "bus-interstate-fleet",
+    label: "Interstate Coach Fleet",
+    category: "bus",
+    entryAmount: 45e5,
+    returnRate: 24,
+    durationDays: 270,
+    slotsUsed: 2,
+    totalSlots: 8,
+    tag: "Enterprise",
+    description: "Toyota Coaster, Marcopolo and luxury interstate coaches serving Lagos\u2013Ibadan and Abuja\u2013Kaduna corridors.",
+    color: "#3b82f6",
+    bgColor: "#eff6ff"
+  },
+  // ---- Trucks & heavy duty -------------------------------------------------
+  {
+    id: "truck-pickup-fleet",
+    label: "Pickup & Delivery Fleet",
+    category: "truck",
+    entryAmount: 35e5,
+    returnRate: 22,
+    durationDays: 210,
+    slotsUsed: 2,
+    totalSlots: 10,
+    tag: "Logistics",
+    description: "Hilux, Ford Ranger and Mitsubishi Canter units for delivery, distribution and construction-site movement.",
+    color: "#ec4899",
+    bgColor: "#fdf2f8"
+  },
+  {
+    id: "truck-heavy-fleet",
+    label: "Heavy Haulage & Tipper Fleet",
+    category: "truck",
+    entryAmount: 8e6,
+    returnRate: 28,
+    durationDays: 365,
+    slotsUsed: 3,
+    totalSlots: 8,
+    tag: "Heavy Duty",
+    description: "Howo, Mack Granite, Mercedes Actros and DAF tippers and trailers for long-haul and construction haulage.",
+    color: "#f43f5e",
+    bgColor: "#fff1f2"
+  }
+];
+router3.get("/", (_req, res) => {
+  return res.json(assetTiers);
+});
+var assets_default = router3;
+
+// src/routes/index.ts
+var router4 = (0, import_express4.Router)();
+router4.use(health_default);
+router4.use("/assets", assets_default);
+router4.use("/wallet", payments_default);
+var routes_default = router4;
 
 // src/app.ts
-var app = (0, import_express4.default)();
+var app = (0, import_express5.default)();
 app.use(
   (0, import_pino_http.default)({
     logger,
@@ -28790,8 +28888,8 @@ app.use(
   })
 );
 app.use((0, import_cors.default)());
-app.use(import_express4.default.json());
-app.use(import_express4.default.urlencoded({ extended: true }));
+app.use(import_express5.default.json());
+app.use(import_express5.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
 var app_default = app;
 
