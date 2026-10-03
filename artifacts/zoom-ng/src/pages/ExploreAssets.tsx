@@ -15,24 +15,28 @@ import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
 const VEHICLE_CATALOG: Record<string, { name: string; images: string[]; desc: string; specs: string }[]> = {
   car: [
-    { name: "Toyota Camry 2020", images: ["https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&q=80", "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&q=80"], desc: "Reliable sedan for ride-hailing services. High demand in Lagos & Abuja.", specs: "2.5L 4-cyl • Auto • 35 MPG" },
-    { name: "Honda Accord 2021", images: ["https://images.unsplash.com/photo-1617531653332-bd46c16f4d68?w=600&q=80", "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&q=80"], desc: "Premium sedan delivering excellent returns from corporate hire.", specs: "1.5L Turbo • CVT • 38 MPG" },
-    { name: "Kia Rio 2022", images: ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&q=80", "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&q=80"], desc: "Economy sedan, perfect for urban ride-sharing in Nigerian cities.", specs: "1.4L 4-cyl • Manual • 40 MPG" },
-    { name: "Toyota Corolla 2021", images: ["https://images.unsplash.com/photo-1623005329960-3ce60d11e46b?w=600&q=80", "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=600&q=80"], desc: "Nigeria's most popular ride-hailing car — always in demand.", specs: "1.8L 4-cyl • Auto • 32 MPG" },
-    { name: "Hyundai Elantra 2022", images: ["https://images.unsplash.com/photo-1568844293986-ca9f5b2caa89?w=600&q=80", "https://images.unsplash.com/photo-1542362567-b07e54358753?w=600&q=80"], desc: "Modern compact sedan with low maintenance costs.", specs: "2.0L 4-cyl • Auto • 36 MPG" },
-    { name: "Toyota Venza 2020", images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80", "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80"], desc: "Executive SUV serving premium airport transfers and corporate clients.", specs: "2.7L V6 • Auto • 28 MPG" },
+    ...["Toyota Highlander", "Toyota Prado", "Toyota Land Cruiser", "Lexus RX 300", "Nissan Pathfinder", "Mercedes GLK", "Range Rover Sport", "Range Rover Vogue", "Ford Escape"].map(name => ({
+      name,
+      images: ["https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80"],
+      desc: `${name} fleet unit available for transport and executive mobility operations.`,
+      specs: "SUV / Jeep • Commercial fleet unit",
+    })),
   ],
   bus: [
-    { name: "Toyota HiAce 2021", images: ["https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80", "https://images.unsplash.com/photo-1569335645895-acb22b6de14f?w=600&q=80"], desc: "High-capacity minibus serving Lagos–Ibadan interstate routes daily.", specs: "14-seater • Diesel • 22 MPG" },
-    { name: "Ford Transit 2022", images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&q=80"], desc: "Versatile van used for goods delivery and inter-city passenger transport.", specs: "15-seater • Diesel • 26 MPG" },
-    { name: "Hiace Bus Fleet 2020", images: ["https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=600&q=80", "https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=600&q=80"], desc: "Commercial fleet bus running Abuja–Kaduna and Enugu–Owerri routes.", specs: "18-seater • Diesel • 20 MPG" },
-    { name: "Mercedes Sprinter 2021", images: ["https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=600&q=80", "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=600&q=80"], desc: "Premium minibus for executive airport shuttles and corporate charters.", specs: "12-seater • Diesel • 28 MPG" },
+    ...["Keke Napep", "Danfo", "Volkswagen T2/T3 Bus", "Hiace White", "Toyota Hiace (Hummer Bus)", "Ford Transit", "Toyota Coaster (30 Seater)", "Hummer Bus Extended", "Marcopolo", "Toyota Luxury Interstate Bus", "Sienna"].map(name => ({
+      name,
+      images: ["https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80"],
+      desc: `${name} fleet unit for city routes, shuttle operations, or interstate transport.`,
+      specs: "Bus / Van • Commercial fleet unit",
+    })),
   ],
   truck: [
-    { name: "Mack Truck 2019", images: ["https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80", "https://images.unsplash.com/photo-1519003300449-424ad0405076?w=600&q=80"], desc: "Heavy haulage truck serving oil sector logistics in the Niger Delta.", specs: "450HP • 40-ton capacity • Diesel" },
-    { name: "DAF XF 2020", images: ["https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&q=80", "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"], desc: "Long-haul European truck running Lagos–Kano corridor with consistent loads.", specs: "530HP • 44-ton • Euro 6" },
-    { name: "Howo A7 2021", images: ["https://images.unsplash.com/photo-1541443131876-44b03de101c5?w=600&q=80", "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"], desc: "Cost-effective dump truck widely used in Nigerian construction projects.", specs: "380HP • 30-ton • Diesel" },
-    { name: "Mercedes Actros 2020", images: ["https://images.unsplash.com/photo-1563720360172-67b8f3dce741?w=600&q=80", "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"], desc: "Premium semi-trailer hauling cement, fertilizer, and FMCG goods.", specs: "510HP • 44-ton • Predictive Cruise" },
+    ...["Toyota Hilux", "Ford Ranger", "Mitsubishi Canter", "Howo Sinotruk", "Mack Dump Truck", "Mercedes 911", "DAF", "Mack Granite", "MAN", "DAF CF", "Iveco Stralis", "Howo", "Mercedes Actros"].map(name => ({
+      name,
+      images: ["https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"],
+      desc: `${name} heavy-duty unit for logistics, construction, delivery, or long-haul operations.`,
+      specs: "Truck / Heavy duty • Commercial fleet unit",
+    })),
   ],
 };
 
@@ -70,6 +74,7 @@ export default function ExploreAssets() {
   const [investOpen, setInvestOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [investAmount, setInvestAmount] = useState("");
+  const [investDays, setInvestDays] = useState(30);
 
   const createInvestment = useCreateInvestment();
   const queryClient = useQueryClient();
@@ -93,11 +98,16 @@ export default function ExploreAssets() {
   const handleInvest = () => {
     if (!selectedAsset) return;
     const amount = Number(investAmount);
+    const days = Number(investDays);
     if (isNaN(amount) || amount < selectedAsset.entryAmount) {
       toast({ title: "Invalid amount", description: `Minimum is ${formatCurrency(selectedAsset.entryAmount)}`, variant: "destructive" });
       return;
     }
-    createInvestment.mutate({ data: { assetId: selectedAsset.id, amount, lockDays: selectedAsset.durationDays } }, {
+    if (!Number.isInteger(days) || days < 1) {
+      toast({ title: "Invalid duration", description: "Choose at least 1 investment day.", variant: "destructive" });
+      return;
+    }
+    createInvestment.mutate({ data: { assetId: selectedAsset.id, amount, lockDays: days } }, {
       onSuccess: () => {
         toast({ title: "Investment Successful!", description: `You invested ${formatCurrency(amount)} in ${selectedAsset.label}` });
         setInvestOpen(false);
@@ -183,7 +193,7 @@ export default function ExploreAssets() {
                         </div>
                         <Progress value={(asset.slotsUsed / asset.totalSlots) * 100} className="h-2 mb-4" />
                         <Button className="w-full rounded-xl h-12 font-bold shadow-md shadow-primary/20"
-                          onClick={() => { setSelectedAsset(asset); setInvestAmount(String(asset.entryAmount)); setInvestOpen(true); }}
+                          onClick={() => { setSelectedAsset(asset); setInvestAmount(String(asset.entryAmount)); setInvestDays(asset.durationDays); setInvestOpen(true); }}
                           disabled={asset.slotsUsed >= asset.totalSlots}>
                           {asset.slotsUsed >= asset.totalSlots ? "Fully Subscribed" : "Invest Now"}
                         </Button>
@@ -244,12 +254,25 @@ export default function ExploreAssets() {
                   <label className="text-sm font-semibold block mb-2">Investment Amount (₦)</label>
                   <Input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)}
                     min={selectedAsset.entryAmount} className="h-14 rounded-xl text-xl font-bold bg-gray-50 border-gray-200 text-center" />
+                  <div className="flex gap-2 mt-2">
+                    {[1000, 2500, 5000].map(amount => (
+                      <Button key={amount} type="button" variant="outline" size="sm" onClick={() => setInvestAmount(String(amount))}>
+                        ₦{amount.toLocaleString()}
+                      </Button>
+                    ))}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Minimum: {formatCurrency(selectedAsset.entryAmount)}</p>
                 </div>
-                {!!investAmount && Number(investAmount) >= selectedAsset.entryAmount && (
+                <div>
+                  <label htmlFor="investment-days" className="text-sm font-semibold block mb-2">Investment duration (days)</label>
+                  <Input id="investment-days" type="number" value={investDays} onChange={e => setInvestDays(Number(e.target.value))}
+                    min={1} step={1} className="h-12 rounded-xl bg-gray-50 border-gray-200 text-center" />
+                  <p className="text-xs text-muted-foreground mt-1">More days means a higher projected profit.</p>
+                </div>
+                {!!investAmount && Number(investAmount) >= selectedAsset.entryAmount && investDays > 0 && (
                   <div className="bg-primary/5 rounded-xl p-4 flex justify-between items-center">
-                    <span className="text-sm font-medium">Expected return</span>
-                    <span className="font-bold text-green-600 text-lg">+{formatCurrency(Number(investAmount) * selectedAsset.returnRate / 100)}</span>
+                    <span className="text-sm font-medium">Projected profit</span>
+                    <span className="font-bold text-green-600 text-lg">+{formatCurrency(Number(investAmount) * (selectedAsset.returnRate / 100) * (investDays / selectedAsset.durationDays))}</span>
                   </div>
                 )}
                 <Button onClick={handleInvest} disabled={createInvestment.isPending} className="w-full h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/20">

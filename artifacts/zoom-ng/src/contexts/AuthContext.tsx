@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   type User,
+  browserLocalPersistence,
   onAuthStateChanged,
+  setPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -27,30 +29,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    if (!auth) {
       setLoading(false);
-    });
-    return unsub;
+      return;
+    }
+
+    let unsub = () => undefined;
+    void setPersistence(auth, browserLocalPersistence)
+      .catch((error) => console.error("[v0] Firebase persistence could not initialize", error))
+      .finally(() => {
+        unsub = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setLoading(false);
+        });
+      });
+    return () => unsub();
   }, []);
 
+  const requireAuth = () => {
+    if (!auth) {
+      throw new Error("Firebase Auth is unavailable. Check the VITE_FIREBASE_* variables in Vercel.");
+    }
+    return auth;
+  };
+
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(requireAuth(), email, password);
   };
 
   const signup = async (email: string, password: string, displayName: string): Promise<User> => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const cred = await createUserWithEmailAndPassword(requireAuth(), email, password);
     await updateProfile(cred.user, { displayName });
     return cred.user;
   };
 
   const loginWithGoogle = async (): Promise<User> => {
-    const result = await signInWithPopup(auth, googleProvider);
+    const result = await signInWithPopup(requireAuth(), googleProvider);
     return result.user;
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await signOut(requireAuth());
   };
 
   const getToken = async (): Promise<string | null> => {
