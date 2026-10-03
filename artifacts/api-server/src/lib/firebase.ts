@@ -9,15 +9,26 @@ function required(name: string) {
   return value;
 }
 
+function resolveCredentials() {
+  const rawKey = required("FIREBASE_PRIVATE_KEY");
+  let privateKey = rawKey.replace(/\\n/g, "\n");
+  if (rawKey.trimStart().startsWith("{")) {
+    // Value is a full service account JSON — extract the private_key field.
+    const parsed = JSON.parse(rawKey);
+    privateKey = String(parsed.private_key ?? "");
+  }
+  return {
+    projectId: required("FIREBASE_PROJECT_ID"),
+    clientEmail: required("FIREBASE_CLIENT_EMAIL"),
+    privateKey,
+    databaseURL: required("FIREBASE_DATABASE_URL"),
+  };
+}
+
 export function getFirebaseDatabase() {
   if (database) return database;
   const app = getApps()[0] ?? initializeApp({
-    credential: cert({
-      projectId: required("FIREBASE_PROJECT_ID"),
-      clientEmail: required("FIREBASE_CLIENT_EMAIL"),
-      privateKey: required("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n"),
-    }),
-    databaseURL: required("FIREBASE_DATABASE_URL"),
+    credential: cert(resolveCredentials()),
   });
   database = getDatabase(app);
   return database;
