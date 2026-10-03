@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   type User,
+  browserLocalPersistence,
   onAuthStateChanged,
+  setPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -32,11 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
+    let unsub = () => undefined;
+    void setPersistence(auth, browserLocalPersistence)
+      .catch((error) => console.error("[v0] Firebase persistence could not initialize", error))
+      .finally(() => {
+        unsub = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setLoading(false);
+        });
+      });
+    return () => unsub();
   }, []);
 
   const requireAuth = () => {
