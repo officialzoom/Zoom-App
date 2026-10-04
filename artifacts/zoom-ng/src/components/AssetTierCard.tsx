@@ -32,6 +32,10 @@ export default function AssetTierCard({ asset }: AssetTierCardProps) {
       toast({ title: "Invalid amount", description: `Minimum investment is ${formatCurrency(asset.entryAmount)}`, variant: "destructive" });
       return;
     }
+    if (numAmount > 30000) {
+      toast({ title: "Amount too high", description: `Maximum investment is ${formatCurrency(30000)} to keep the platform accessible.`, variant: "destructive" });
+      return;
+    }
 
     createInvestment.mutate({
       data: { assetId: asset.id, amount: numAmount, lockDays: asset.durationDays }
@@ -118,15 +122,16 @@ export default function AssetTierCard({ asset }: AssetTierCardProps) {
 
           <div className="space-y-3">
             <Label htmlFor="amount" className="text-sm font-semibold">Investment Amount (₦)</Label>
-            <Input 
-              id="amount" 
-              type="number" 
-              value={amount} 
+            <Input
+              id="amount"
+              type="number"
+              value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              max={30000}
               className="h-14 rounded-xl text-lg font-semibold bg-gray-50 border-gray-200 focus-visible:ring-primary"
             />
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Info className="w-3 h-3" /> Min investment: {formatCurrency(asset.entryAmount)}
+              <Info className="w-3 h-3" /> Min: {formatCurrency(asset.entryAmount)} • Max: {formatCurrency(30000)}
             </p>
           </div>
 

@@ -11,6 +11,7 @@ export interface AssetTier {
   label: string;
   category: string;
   entryAmount: number;
+  maxAmount?: number;
   returnRate: number;
   durationDays: number;
   slotsUsed: number;

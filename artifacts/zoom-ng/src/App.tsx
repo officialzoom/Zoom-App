@@ -11,7 +11,6 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import ExploreAssets from "@/pages/ExploreAssets";
-import AdPortal from "@/pages/AdPortal";
 import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
 import { initApiAuth } from "@/lib/api";
@@ -38,9 +37,6 @@ function Router() {
       </Route>
       <Route path="/explore">
         <ProtectedRoute><ExploreAssets /></ProtectedRoute>
-      </Route>
-      <Route path="/ads">
-        <ProtectedRoute><AdPortal /></ProtectedRoute>
       </Route>
       <Route path="/profile">
         <ProtectedRoute><Profile /></ProtectedRoute>

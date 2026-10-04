@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
-import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey } from "@workspace/api-client-react";
+import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useGetDashboardSummary, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Plus, Trash2, LogOut, Settings, CreditCard, HelpCircle, Copy, Users, Share2, MessageSquare } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, LogOut, Settings, CreditCard, HelpCircle, Copy, Users, Share2, MessageSquare, Phone, MapPin, Mail, Calendar, TrendingUp, Wallet, Activity } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +12,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/formatting";
 import { useAuth } from "@/contexts/AuthContext";
 import { Textarea } from "@/components/ui/textarea";
+import AddFundsButton from "@/components/AddFundsButton";
 
 export default function Profile() {
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const { data: banks, isLoading: banksLoading } = useGetBanks();
   const { data: wallet } = useGetWallet();
+  const { data: summary } = useGetDashboardSummary();
   const availableBanks = Array.isArray(banks) ? banks : [];
   
   const addBank = useAddBank();
@@ -114,15 +116,93 @@ export default function Profile() {
                     {profile.displayName}
                     {profile.kycVerified && <ShieldCheck className="w-5 h-5 text-green-500" />}
                   </h2>
-                  <p className="text-sm text-muted-foreground mb-4">{profile.email}</p>
-                  <div className="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-2 text-left">
-                    <div><p className="text-xs text-muted-foreground">Level</p><p className="font-semibold text-primary">{profile.investorLevel}</p></div>
-                    <div><p className="text-xs text-muted-foreground">Referrals</p><p className="font-semibold">{profile.referralCount} users</p></div>
-                    <div className="col-span-2"><p className="text-xs text-muted-foreground">Member Since</p><p className="font-semibold">{profile.memberSince}</p></div>
+                  <p className="text-sm text-muted-foreground mb-1">{profile.email}</p>
+                  {profile.kycVerified && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-semibold mb-4">
+                      <ShieldCheck className="w-3 h-3" /> KYC Verified
+                    </span>
+                  )}
+
+                  <div className="bg-gray-50 rounded-2xl p-4 space-y-3 text-left">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium truncate">{profile.email}</span>
+                    </div>
+                    {profile.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">Phone:</span>
+                        <span className="font-medium">{profile.phone}</span>
+                      </div>
+                    )}
+                    {profile.location && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">Location:</span>
+                        <span className="font-medium">{profile.location}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">Member Since:</span>
+                      <span className="font-medium">{profile.memberSince}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div className="bg-primary/10 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Investor Level</p>
+                      <p className="font-bold text-primary">{profile.investorLevel}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Referrals</p>
+                      <p className="font-bold text-blue-600">{profile.referralCount} users</p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Investment stats */}
+            {profile && summary && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="text-lg font-bold mb-4">Account Summary</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Wallet Balance</span>
+                    </div>
+                    <span className="font-bold">{formatCurrency(summary.walletBalance)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Active Investments</span>
+                    </div>
+                    <span className="font-bold">{formatCurrency(summary.activeInvestmentsValue)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Total Returns</span>
+                    </div>
+                    <span className="font-bold text-green-600">{formatCurrency(summary.totalEarnings)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Active / Completed</span>
+                    </div>
+                    <span className="font-bold">{summary.activeInvestmentsCount} / {summary.completedInvestmentsCount}</span>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <AddFundsButton className="w-full h-12 rounded-xl font-semibold" label="Add Funds to Wallet" />
+                </div>
+              </div>
+            )}
 
             {/* Referral card */}
             {profile && (

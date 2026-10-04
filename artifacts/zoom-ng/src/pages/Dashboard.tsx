@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import AddFundsButton from "@/components/AddFundsButton";
 
 export default function Dashboard() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary();
@@ -37,6 +38,12 @@ export default function Dashboard() {
                   weeklyChange: summary.weeklyChange
                 }} />
               )}
+              <div className="mt-4">
+                <AddFundsButton
+                  className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg shadow-primary/20"
+                  label="Add Funds"
+                />
+              </div>
             </section>
 
             <section>

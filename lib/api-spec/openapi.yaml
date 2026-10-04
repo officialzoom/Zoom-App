@@ -467,6 +467,8 @@ components:
           type: string
         entryAmount:
           type: number
+        maxAmount:
+          type: number
         returnRate:
           type: number
         durationDays:

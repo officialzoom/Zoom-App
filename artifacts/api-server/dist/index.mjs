@@ -20732,27 +20732,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router5;
+    module.exports = Router9;
     module.exports.Route = Route;
-    function Router5(options) {
-      if (!(this instanceof Router5)) {
-        return new Router5(options);
+    function Router9(options) {
+      if (!(this instanceof Router9)) {
+        return new Router9(options);
       }
       const opts = options || {};
-      function router5(req, res, next) {
-        router5.handle(req, res, next);
+      function router9(req, res, next) {
+        router9.handle(req, res, next);
       }
-      Object.setPrototypeOf(router5, this);
-      router5.caseSensitive = opts.caseSensitive;
-      router5.mergeParams = opts.mergeParams;
-      router5.params = {};
-      router5.strict = opts.strict;
-      router5.stack = [];
-      return router5;
+      Object.setPrototypeOf(router9, this);
+      router9.caseSensitive = opts.caseSensitive;
+      router9.mergeParams = opts.mergeParams;
+      router9.params = {};
+      router9.strict = opts.strict;
+      router9.stack = [];
+      return router9;
     }
-    Router5.prototype = function() {
+    Router9.prototype = function() {
     };
-    Router5.prototype.param = function param(name, fn) {
+    Router9.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20772,7 +20772,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router5.prototype.handle = function handle(req, res, callback) {
+    Router9.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20899,7 +20899,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router5.prototype.use = function use(handler) {
+    Router9.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20932,7 +20932,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router5.prototype.route = function route(path) {
+    Router9.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20947,7 +20947,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router5.prototype[method] = function(path) {
+      Router9.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21130,13 +21130,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router5 = require_router();
+    var Router9 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router5 = null;
+      var router9 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21145,13 +21145,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router5 === null) {
-            router5 = new Router5({
+          if (router9 === null) {
+            router9 = new Router9({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router5;
+          return router9;
         }
       });
     };
@@ -21222,15 +21222,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router5 = this.router;
+      var router9 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router5.use(path, fn2);
+          return router9.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router5.use(path, function mounted_app(req, res, next) {
+        router9.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23739,7 +23739,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router5 = require_router();
+    var Router9 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23761,8 +23761,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router5.Route;
-    exports.Router = Router5;
+    exports.Route = Router9.Route;
+    exports.Router = Router9;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -28621,12 +28621,12 @@ var require_logger = __commonJS({
 });
 
 // src/app.ts
-var import_express5 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express4 = __toESM(require_express2(), 1);
+var import_express8 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -28636,8 +28636,106 @@ router.get("/healthz", (_req, res) => {
 });
 var health_default = router;
 
-// src/routes/payments.ts
+// src/routes/assets.ts
 var import_express2 = __toESM(require_express2(), 1);
+var router2 = (0, import_express2.Router)();
+var MAX_INVESTMENT = 3e4;
+var assetTiers = [
+  // ---- Cars / SUVs / Jeeps -------------------------------------------------
+  {
+    id: "car-suv-fleet",
+    label: "SUV & Jeep Executive Fleet",
+    category: "car",
+    entryAmount: 1e4,
+    returnRate: 16,
+    durationDays: 180,
+    slotsUsed: 2,
+    totalSlots: 10,
+    tag: "Executive",
+    description: "Ride-hailing and corporate hire fleet of Highlander, Prado, Lexus RX and Pathfinder units for Lagos & Abuja.",
+    color: "#10b981",
+    bgColor: "#ecfdf5"
+  },
+  {
+    id: "car-luxury-fleet",
+    label: "Executive Luxury SUV Fleet",
+    category: "car",
+    entryAmount: 2e4,
+    returnRate: 19,
+    durationDays: 270,
+    slotsUsed: 4,
+    totalSlots: 8,
+    tag: "Premium",
+    description: "Land Cruiser and Range Rover units for airport transfers and executive chauffeured mobility.",
+    color: "#8b5cf6",
+    bgColor: "#f5f3ff"
+  },
+  // ---- Buses & vans --------------------------------------------------------
+  {
+    id: "bus-city-fleet",
+    label: "City Route Mini-Bus Fleet",
+    category: "bus",
+    entryAmount: 5e3,
+    returnRate: 20,
+    durationDays: 180,
+    slotsUsed: 3,
+    totalSlots: 12,
+    tag: "High Yield",
+    description: "HiAce, Ford Transit and Hiace White units running busy intra-city routes and last-mile passenger transport.",
+    color: "#f59e0b",
+    bgColor: "#fffbeb"
+  },
+  {
+    id: "bus-interstate-fleet",
+    label: "Interstate Coach Fleet",
+    category: "bus",
+    entryAmount: 15e3,
+    returnRate: 24,
+    durationDays: 270,
+    slotsUsed: 2,
+    totalSlots: 8,
+    tag: "Enterprise",
+    description: "Toyota Coaster, Marcopolo and luxury interstate coaches serving Lagos\u2013Ibadan and Abuja\u2013Kaduna corridors.",
+    color: "#3b82f6",
+    bgColor: "#eff6ff"
+  },
+  // ---- Trucks & heavy duty -------------------------------------------------
+  {
+    id: "truck-pickup-fleet",
+    label: "Pickup & Delivery Fleet",
+    category: "truck",
+    entryAmount: 8e3,
+    returnRate: 22,
+    durationDays: 210,
+    slotsUsed: 2,
+    totalSlots: 10,
+    tag: "Logistics",
+    description: "Hilux, Ford Ranger and Mitsubishi Canter units for delivery, distribution and construction-site movement.",
+    color: "#ec4899",
+    bgColor: "#fdf2f8"
+  },
+  {
+    id: "truck-heavy-fleet",
+    label: "Heavy Haulage & Tipper Fleet",
+    category: "truck",
+    entryAmount: 3e4,
+    returnRate: 28,
+    durationDays: 365,
+    slotsUsed: 3,
+    totalSlots: 8,
+    tag: "Heavy Duty",
+    description: "Howo, Mack Granite, Mercedes Actros and DAF tippers and trailers for long-haul and construction haulage.",
+    color: "#f43f5e",
+    bgColor: "#fff1f2"
+  }
+];
+router2.get("/", (_req, res) => {
+  return res.json(assetTiers.map((t) => ({ ...t, maxAmount: MAX_INVESTMENT })));
+});
+var assets_default = router2;
+
+// src/routes/payments.ts
+var import_express3 = __toESM(require_express2(), 1);
 import { randomUUID } from "crypto";
 
 // src/lib/auth.ts
@@ -28717,9 +28815,9 @@ async function requireAuth(req, res, next) {
 }
 
 // src/routes/payments.ts
-var router2 = (0, import_express2.Router)();
+var router3 = (0, import_express3.Router)();
 var config = () => ({ secretKey: process.env.SQUADCO_SECRET_KEY ?? "", baseUrl: process.env.SQUADCO_BASE_URL ?? "https://sandbox-api-d.squadco.com" });
-router2.post("/fund", requireAuth, async (req, res) => {
+router3.post("/fund", requireAuth, async (req, res) => {
   const amount = Number(req.body?.amount);
   if (!Number.isFinite(amount) || amount < 100) return res.status(400).json({ error: "Minimum top-up is \u20A6100" });
   const { secretKey, baseUrl } = config();
@@ -28731,7 +28829,7 @@ router2.post("/fund", requireAuth, async (req, res) => {
   await getFirebaseDatabase().ref(userPath(req.userId, `payments/${transactionRef}`)).set({ amount, status: "pending", createdAt: Date.now() });
   return res.json({ checkoutUrl: data.data.checkout_url, transactionRef });
 });
-router2.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
+router3.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
   const { secretKey, baseUrl } = config();
   if (!secretKey) return res.status(503).json({ error: "Payment gateway not configured" });
   const response = await fetch(`${baseUrl}/transaction/verify/${req.params.transactionRef}`, { headers: { Authorization: `Bearer ${secretKey}` } });
@@ -28744,130 +28842,392 @@ router2.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
   if (result.committed) await getFirebaseDatabase().ref(userPath(req.userId, "wallet/balance")).transaction((balance) => Number(balance ?? 0) + amount);
   return res.json({ verified: true, amount });
 });
-router2.get("/banks", requireAuth, async (req, res) => {
+router3.get("/banks", requireAuth, async (req, res) => {
   const snapshot = await getFirebaseDatabase().ref(userPath(req.userId, "banks")).get();
   return res.json(Object.entries(snapshot.val() ?? {}).map(([id, bank]) => ({ id, ...bank })));
 });
-router2.post("/banks", requireAuth, async (req, res) => {
+router3.post("/banks", requireAuth, async (req, res) => {
   const ref = getFirebaseDatabase().ref(userPath(req.userId, "banks")).push();
   const bank = { ...req.body, createdAt: Date.now() };
   await ref.set(bank);
   return res.status(201).json({ id: ref.key, ...bank });
 });
-router2.delete("/banks/:bankId", requireAuth, async (req, res) => {
+router3.delete("/banks/:bankId", requireAuth, async (req, res) => {
   const ref = getFirebaseDatabase().ref(userPath(req.userId, `banks/${req.params.bankId}`));
   if (!(await ref.get()).exists()) return res.status(404).json({ error: "Bank account not found" });
   await ref.remove();
   return res.status(204).send();
 });
-var payments_default = router2;
+var payments_default = router3;
 
-// src/routes/assets.ts
-var import_express3 = __toESM(require_express2(), 1);
-var router3 = (0, import_express3.Router)();
-var assetTiers = [
-  // ---- Cars / SUVs / Jeeps -------------------------------------------------
-  {
-    id: "car-suv-fleet",
-    label: "SUV & Jeep Executive Fleet",
-    category: "car",
-    entryAmount: 5e6,
-    returnRate: 16,
-    durationDays: 180,
-    slotsUsed: 2,
-    totalSlots: 10,
-    tag: "Executive",
-    description: "Ride-hailing and corporate hire fleet of Highlander, Prado, Lexus RX and Pathfinder units for Lagos & Abuja.",
-    color: "#10b981",
-    bgColor: "#ecfdf5"
-  },
-  {
-    id: "car-luxury-fleet",
-    label: "Executive Luxury SUV Fleet",
-    category: "car",
-    entryAmount: 1e7,
-    returnRate: 19,
-    durationDays: 270,
-    slotsUsed: 4,
-    totalSlots: 8,
-    tag: "Premium",
-    description: "Land Cruiser and Range Rover units for airport transfers and executive chauffeured mobility.",
-    color: "#8b5cf6",
-    bgColor: "#f5f3ff"
-  },
-  // ---- Buses & vans --------------------------------------------------------
-  {
-    id: "bus-city-fleet",
-    label: "City Route Mini-Bus Fleet",
-    category: "bus",
-    entryAmount: 18e5,
-    returnRate: 20,
-    durationDays: 180,
-    slotsUsed: 3,
-    totalSlots: 12,
-    tag: "High Yield",
-    description: "HiAce, Ford Transit and Hiace White units running busy intra-city routes and last-mile passenger transport.",
-    color: "#f59e0b",
-    bgColor: "#fffbeb"
-  },
-  {
-    id: "bus-interstate-fleet",
-    label: "Interstate Coach Fleet",
-    category: "bus",
-    entryAmount: 45e5,
-    returnRate: 24,
-    durationDays: 270,
-    slotsUsed: 2,
-    totalSlots: 8,
-    tag: "Enterprise",
-    description: "Toyota Coaster, Marcopolo and luxury interstate coaches serving Lagos\u2013Ibadan and Abuja\u2013Kaduna corridors.",
-    color: "#3b82f6",
-    bgColor: "#eff6ff"
-  },
-  // ---- Trucks & heavy duty -------------------------------------------------
-  {
-    id: "truck-pickup-fleet",
-    label: "Pickup & Delivery Fleet",
-    category: "truck",
-    entryAmount: 35e5,
-    returnRate: 22,
-    durationDays: 210,
-    slotsUsed: 2,
-    totalSlots: 10,
-    tag: "Logistics",
-    description: "Hilux, Ford Ranger and Mitsubishi Canter units for delivery, distribution and construction-site movement.",
-    color: "#ec4899",
-    bgColor: "#fdf2f8"
-  },
-  {
-    id: "truck-heavy-fleet",
-    label: "Heavy Haulage & Tipper Fleet",
-    category: "truck",
-    entryAmount: 8e6,
-    returnRate: 28,
-    durationDays: 365,
-    slotsUsed: 3,
-    totalSlots: 8,
-    tag: "Heavy Duty",
-    description: "Howo, Mack Granite, Mercedes Actros and DAF tippers and trailers for long-haul and construction haulage.",
-    color: "#f43f5e",
-    bgColor: "#fff1f2"
-  }
-];
-router3.get("/", (_req, res) => {
-  return res.json(assetTiers);
+// src/routes/user.ts
+var import_express4 = __toESM(require_express2(), 1);
+var router4 = (0, import_express4.Router)();
+router4.get("/profile", requireAuth, async (req, res) => {
+  const db = getFirebaseDatabase();
+  const snap = await db.ref(userPath(req.userId)).get();
+  const stored = snap.val() ?? {};
+  const email = req.userEmail ?? stored.email ?? "";
+  const displayName = stored.displayName || email.split("@")[0] || "Investor";
+  const avatarInitials = displayName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const profile = {
+    id: req.userId,
+    displayName,
+    email,
+    phone: stored.phone ?? "",
+    location: stored.location ?? "",
+    avatarInitials,
+    kycVerified: Boolean(stored.kycVerified),
+    memberSince: stored.memberSince ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+    investorLevel: stored.investorLevel ?? "Bronze",
+    referralCount: stored.referralCount ?? 0,
+    referralCode: stored.referralCode ?? req.userId.slice(0, 8).toUpperCase()
+  };
+  return res.json(profile);
 });
-var assets_default = router3;
+router4.patch("/profile", requireAuth, async (req, res) => {
+  const updates = {};
+  if (typeof req.body?.displayName === "string" && req.body.displayName.trim()) updates.displayName = req.body.displayName.trim();
+  if (typeof req.body?.phone === "string") updates.phone = req.body.phone.trim();
+  if (typeof req.body?.location === "string") updates.location = req.body.location.trim();
+  const db = getFirebaseDatabase();
+  const ref = db.ref(userPath(req.userId));
+  await ref.update(updates);
+  const snap = await ref.get();
+  const stored = snap.val() ?? {};
+  const email = req.userEmail ?? stored.email ?? "";
+  const displayName = stored.displayName || email.split("@")[0] || "Investor";
+  const avatarInitials = displayName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return res.json({
+    id: req.userId,
+    displayName,
+    email,
+    phone: stored.phone ?? "",
+    location: stored.location ?? "",
+    avatarInitials,
+    kycVerified: Boolean(stored.kycVerified),
+    memberSince: stored.memberSince ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+    investorLevel: stored.investorLevel ?? "Bronze",
+    referralCount: stored.referralCount ?? 0,
+    referralCode: stored.referralCode ?? req.userId.slice(0, 8).toUpperCase()
+  });
+});
+var user_default = router4;
+
+// src/routes/wallet.ts
+var import_express5 = __toESM(require_express2(), 1);
+var router5 = (0, import_express5.Router)();
+router5.get("/", requireAuth, async (req, res) => {
+  const db = getFirebaseDatabase();
+  const walletSnap = await db.ref(userPath(req.userId, "wallet")).get();
+  const wallet = walletSnap.val() ?? {};
+  const balance = Number(wallet.balance ?? 0);
+  const invSnap = await db.ref(userPath(req.userId, "investments")).get();
+  const investments = invSnap.val() ?? {};
+  let activeInvestmentsValue = 0;
+  let totalEarnings = 0;
+  for (const inv of Object.values(investments)) {
+    if (inv.status === "active") activeInvestmentsValue += Number(inv.amount ?? 0);
+    if (inv.status === "completed") totalEarnings += Number(inv.expectedPayout ?? 0) - Number(inv.amount ?? 0);
+  }
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1e3;
+  const txSnap = await db.ref(userPath(req.userId, "transactions")).get();
+  const transactions = txSnap.val() ?? {};
+  let weeklyChange = 0;
+  for (const tx of Object.values(transactions)) {
+    if (Number(tx.date ?? 0) >= weekAgo && (tx.type === "return" || tx.type === "deposit")) {
+      weeklyChange += Number(tx.amount ?? 0);
+    }
+  }
+  return res.json({
+    balance,
+    activeInvestmentsValue,
+    totalEarnings,
+    weeklyChange
+  });
+});
+router5.post("/topup", requireAuth, async (req, res) => {
+  const amount = Number(req.body?.amount);
+  if (!Number.isFinite(amount) || amount < 100) return res.status(400).json({ error: "Minimum top-up is \u20A6100" });
+  const secretKey = process.env.SQUADCO_SECRET_KEY ?? "";
+  const baseUrl = process.env.SQUADCO_BASE_URL ?? "https://sandbox-api-d.squadco.com";
+  if (!secretKey) return res.status(503).json({ error: "Payment gateway not configured" });
+  const transactionRef = `ZMNG-W-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const callbackUrl = `${req.headers.origin ?? ""}/profile?fund=${transactionRef}`;
+  const response = await fetch(`${baseUrl}/transaction/initiate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: Math.round(amount * 100),
+      email: req.userEmail ?? "",
+      currency: "NGN",
+      initiate_type: "inline",
+      transaction_ref: transactionRef,
+      callback_url: callbackUrl,
+      metadata: { userId: req.userId, type: "wallet_fund" }
+    })
+  });
+  const data = await response.json();
+  if (!response.ok || !data.data?.checkout_url) {
+    return res.status(502).json({ error: data.message ?? "Failed to initiate payment" });
+  }
+  const db = getFirebaseDatabase();
+  await db.ref(userPath(req.userId, `payments/${transactionRef}`)).set({
+    amount,
+    status: "pending",
+    type: "wallet_fund",
+    createdAt: Date.now()
+  });
+  return res.json({ checkoutUrl: data.data.checkout_url, transactionRef, balance: 0 });
+});
+router5.get("/fund/verify/:transactionRef", requireAuth, async (req, res) => {
+  const secretKey = process.env.SQUADCO_SECRET_KEY ?? "";
+  const baseUrl = process.env.SQUADCO_BASE_URL ?? "https://sandbox-api-d.squadco.com";
+  if (!secretKey) return res.status(503).json({ error: "Payment gateway not configured" });
+  const response = await fetch(`${baseUrl}/transaction/verify/${req.params.transactionRef}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    return res.status(402).json({ verified: false, error: data.message ?? "Payment verification failed" });
+  }
+  if (data.data?.transaction_status !== "Success") {
+    return res.json({ verified: false, status: data.data?.transaction_status ?? "pending" });
+  }
+  const db = getFirebaseDatabase();
+  const amount = Number(data.data.transaction_amount ?? 0) / 100;
+  const paymentRef = db.ref(userPath(req.userId, `payments/${req.params.transactionRef}`));
+  const result = await paymentRef.transaction(
+    (payment) => payment?.credited ? payment : { ...payment ?? {}, amount, status: "verified", credited: true, verifiedAt: Date.now() }
+  );
+  if (result.committed) {
+    await db.ref(userPath(req.userId, "wallet/balance")).transaction((balance) => Number(balance ?? 0) + amount);
+    const txRef = db.ref(userPath(req.userId, "transactions")).push();
+    await txRef.set({
+      type: "deposit",
+      label: "Wallet Top Up",
+      amount,
+      date: Date.now(),
+      status: "completed"
+    });
+  }
+  return res.json({ verified: true, amount, balance: 0 });
+});
+router5.post("/withdraw", requireAuth, async (req, res) => {
+  const amount = Number(req.body?.amount);
+  const bankId = req.body?.bankId;
+  if (!Number.isFinite(amount) || amount < 100) return res.status(400).json({ error: "Minimum withdrawal is \u20A6100" });
+  if (!bankId) return res.status(400).json({ error: "Select a bank account" });
+  const db = getFirebaseDatabase();
+  const walletSnap = await db.ref(userPath(req.userId, "wallet")).get();
+  const balance = Number(walletSnap.val()?.balance ?? 0);
+  if (amount > balance) return res.status(400).json({ error: "Insufficient balance" });
+  const userSnap = await db.ref(userPath(req.userId)).get();
+  const referralCount = Number(userSnap.val()?.referralCount ?? 0);
+  if (referralCount < 5) return res.status(403).json({ error: "You need at least 5 referrals to withdraw" });
+  const now = Date.now();
+  const approvalDeadline = now + 12 * 60 * 60 * 1e3;
+  const wRef = db.ref(userPath(req.userId, "withdrawalRequests")).push();
+  await wRef.set({
+    amount,
+    bankId,
+    status: "pending",
+    createdAt: now,
+    approvalDeadline
+  });
+  await db.ref(userPath(req.userId, "wallet/balance")).transaction((bal) => Number(bal ?? 0) - amount);
+  const txRef = db.ref(userPath(req.userId, "transactions")).push();
+  await txRef.set({
+    type: "withdrawal",
+    label: "Withdrawal Request",
+    amount,
+    date: now,
+    status: "pending"
+  });
+  return res.json({
+    balance: 0,
+    message: "Withdrawal request submitted. Admin has 12 hours to approve."
+  });
+});
+router5.get("/transactions", requireAuth, async (req, res) => {
+  const db = getFirebaseDatabase();
+  const snap = await db.ref(userPath(req.userId, "transactions")).get();
+  const txns = snap.val() ?? {};
+  const list = Object.entries(txns).map(([id, tx]) => ({
+    id,
+    type: tx.type ?? "deposit",
+    label: tx.label ?? "",
+    amount: Number(tx.amount ?? 0),
+    date: new Date(Number(tx.date ?? Date.now())).toISOString(),
+    status: tx.status ?? "completed"
+  }));
+  list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return res.json(list);
+});
+var wallet_default = router5;
+
+// src/routes/investments.ts
+var import_express6 = __toESM(require_express2(), 1);
+var router6 = (0, import_express6.Router)();
+var ASSET_TIERS = {
+  "car-suv-fleet": { label: "SUV & Jeep Executive Fleet", returnRate: 16, durationDays: 180, entryAmount: 1e4 },
+  "car-luxury-fleet": { label: "Executive Luxury SUV Fleet", returnRate: 19, durationDays: 270, entryAmount: 2e4 },
+  "bus-city-fleet": { label: "City Route Mini-Bus Fleet", returnRate: 20, durationDays: 180, entryAmount: 5e3 },
+  "bus-interstate-fleet": { label: "Interstate Coach Fleet", returnRate: 24, durationDays: 270, entryAmount: 15e3 },
+  "truck-pickup-fleet": { label: "Pickup & Delivery Fleet", returnRate: 22, durationDays: 210, entryAmount: 8e3 },
+  "truck-heavy-fleet": { label: "Heavy Haulage & Tipper Fleet", returnRate: 28, durationDays: 365, entryAmount: 3e4 }
+};
+var MAX_INVESTMENT2 = 3e4;
+router6.get("/", requireAuth, async (req, res) => {
+  const db = getFirebaseDatabase();
+  const snap = await db.ref(userPath(req.userId, "investments")).get();
+  const investments = snap.val() ?? {};
+  const list = Object.entries(investments).map(([id, inv]) => ({
+    id,
+    assetId: inv.assetId ?? "",
+    assetLabel: inv.assetLabel ?? "",
+    amount: Number(inv.amount ?? 0),
+    expectedPayout: Number(inv.expectedPayout ?? 0),
+    returnRate: Number(inv.returnRate ?? 0),
+    status: inv.status ?? "active",
+    startDate: inv.startDate ?? (/* @__PURE__ */ new Date()).toISOString(),
+    endDate: inv.endDate ?? (/* @__PURE__ */ new Date()).toISOString()
+  }));
+  return res.json(list);
+});
+router6.post("/", requireAuth, async (req, res) => {
+  const assetId = req.body?.assetId;
+  const amount = Number(req.body?.amount);
+  const lockDays = Number(req.body?.lockDays ?? 0);
+  if (!assetId || !ASSET_TIERS[assetId]) {
+    return res.status(400).json({ error: "Invalid asset selected" });
+  }
+  const tier = ASSET_TIERS[assetId];
+  if (!Number.isFinite(amount) || amount < tier.entryAmount) {
+    return res.status(400).json({ error: `Minimum investment for this asset is \u20A6${tier.entryAmount.toLocaleString("en-NG")}` });
+  }
+  if (amount > MAX_INVESTMENT2) {
+    return res.status(400).json({ error: `Maximum investment is ${MAX_INVESTMENT2.toLocaleString("en-NG")} to keep the platform accessible` });
+  }
+  if (!Number.isInteger(lockDays) || lockDays < 1) {
+    return res.status(400).json({ error: "Invalid investment duration" });
+  }
+  const db = getFirebaseDatabase();
+  const walletSnap = await db.ref(userPath(req.userId, "wallet")).get();
+  const balance = Number(walletSnap.val()?.balance ?? 0);
+  if (amount > balance) {
+    return res.status(400).json({ error: "Insufficient wallet balance. Please add funds first." });
+  }
+  const prorate = Math.min(lockDays / tier.durationDays, 1);
+  const expectedPayout = Math.round(amount * (1 + tier.returnRate / 100 * prorate));
+  const now = Date.now();
+  const startDate = new Date(now).toISOString();
+  const endDate = new Date(now + lockDays * 24 * 60 * 60 * 1e3).toISOString();
+  await db.ref(userPath(req.userId, "wallet/balance")).transaction((bal) => Number(bal ?? 0) - amount);
+  const invRef = db.ref(userPath(req.userId, "investments")).push();
+  await invRef.set({
+    assetId,
+    assetLabel: tier.label,
+    amount,
+    expectedPayout,
+    returnRate: tier.returnRate,
+    status: "active",
+    startDate,
+    endDate,
+    lockDays,
+    createdAt: now
+  });
+  const txRef = db.ref(userPath(req.userId, "transactions")).push();
+  await txRef.set({
+    type: "invest",
+    label: `Investment in ${tier.label}`,
+    amount,
+    date: now,
+    status: "active"
+  });
+  return res.status(201).json({
+    id: invRef.key,
+    assetId,
+    assetLabel: tier.label,
+    amount,
+    expectedPayout,
+    returnRate: tier.returnRate,
+    status: "active",
+    startDate,
+    endDate
+  });
+});
+var investments_default = router6;
+
+// src/routes/dashboard.ts
+var import_express7 = __toESM(require_express2(), 1);
+var router7 = (0, import_express7.Router)();
+router7.get("/summary", requireAuth, async (req, res) => {
+  const db = getFirebaseDatabase();
+  const userRef = db.ref(userPath(req.userId));
+  const [walletSnap, invSnap, txSnap] = await Promise.all([
+    userRef.child("wallet").get(),
+    userRef.child("investments").get(),
+    userRef.child("transactions").get()
+  ]);
+  const wallet = walletSnap.val() ?? {};
+  const balance = Number(wallet.balance ?? 0);
+  const investments = invSnap.val() ?? {};
+  const transactions = txSnap.val() ?? {};
+  let activeInvestmentsValue = 0;
+  let totalEarnings = 0;
+  let activeCount = 0;
+  let completedCount = 0;
+  for (const inv of Object.values(investments)) {
+    if (inv.status === "active") {
+      activeInvestmentsValue += Number(inv.amount ?? 0);
+      activeCount++;
+    }
+    if (inv.status === "completed") {
+      totalEarnings += Number(inv.expectedPayout ?? 0) - Number(inv.amount ?? 0);
+      completedCount++;
+    }
+  }
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1e3;
+  let weeklyChange = 0;
+  const recentTransactions = Object.entries(transactions).map(([id, tx]) => ({
+    id,
+    type: tx.type ?? "deposit",
+    label: tx.label ?? "",
+    amount: Number(tx.amount ?? 0),
+    date: new Date(Number(tx.date ?? Date.now())).toISOString(),
+    status: tx.status ?? "completed"
+  })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  for (const tx of recentTransactions) {
+    if (new Date(tx.date).getTime() >= weekAgo && (tx.type === "return" || tx.type === "deposit")) {
+      weeklyChange += tx.amount;
+    }
+  }
+  return res.json({
+    walletBalance: balance,
+    activeInvestmentsValue,
+    weeklyChange,
+    totalEarnings,
+    activeInvestmentsCount: activeCount,
+    completedInvestmentsCount: completedCount,
+    recentTransactions: recentTransactions.slice(0, 8)
+  });
+});
+var dashboard_default = router7;
 
 // src/routes/index.ts
-var router4 = (0, import_express4.Router)();
-router4.use(health_default);
-router4.use("/assets", assets_default);
-router4.use("/wallet", payments_default);
-var routes_default = router4;
+var router8 = (0, import_express8.Router)();
+router8.use(health_default);
+router8.use("/assets", assets_default);
+router8.use("/user", user_default);
+router8.use("/wallet", wallet_default);
+router8.use("/wallet", payments_default);
+router8.use("/investments", investments_default);
+router8.use("/dashboard", dashboard_default);
+var routes_default = router8;
 
 // src/app.ts
-var app = (0, import_express5.default)();
+var app = (0, import_express9.default)();
 app.use(
   (0, import_pino_http.default)({
     logger,
@@ -28888,8 +29248,8 @@ app.use(
   })
 );
 app.use((0, import_cors.default)());
-app.use(import_express5.default.json());
-app.use(import_express5.default.urlencoded({ extended: true }));
+app.use(import_express9.default.json());
+app.use(import_express9.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
 var app_default = app;
 

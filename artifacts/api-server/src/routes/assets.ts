@@ -5,19 +5,20 @@ const router = Router();
 /**
  * Investment & pricing strategy for each fleet tier.
  *
- * Pricing model: the entry amount is the minimum stake toward a funded
- * vehicle unit. Returns are projected annualized yields from transport
- * operations (ride-hailing, shuttle, haulage) after running costs.
- * Longer durations earn higher returns; slots cap how much of a unit is
- * funded by the pool before the vehicle is acquired.
+ * All entry amounts are capped at ₦30,000 maximum to keep the platform
+ * accessible to everyday investors. Returns are projected annualized yields
+ * from transport operations after running costs. Longer durations earn
+ * higher returns; slots cap how much of a unit is funded by the pool.
  */
+const MAX_INVESTMENT = 30_000;
+
 const assetTiers = [
   // ---- Cars / SUVs / Jeeps -------------------------------------------------
   {
     id: "car-suv-fleet",
     label: "SUV & Jeep Executive Fleet",
     category: "car",
-    entryAmount: 5000000,
+    entryAmount: 10000,
     returnRate: 16,
     durationDays: 180,
     slotsUsed: 2,
@@ -32,7 +33,7 @@ const assetTiers = [
     id: "car-luxury-fleet",
     label: "Executive Luxury SUV Fleet",
     category: "car",
-    entryAmount: 10000000,
+    entryAmount: 20000,
     returnRate: 19,
     durationDays: 270,
     slotsUsed: 4,
@@ -48,7 +49,7 @@ const assetTiers = [
     id: "bus-city-fleet",
     label: "City Route Mini-Bus Fleet",
     category: "bus",
-    entryAmount: 1800000,
+    entryAmount: 5000,
     returnRate: 20,
     durationDays: 180,
     slotsUsed: 3,
@@ -63,7 +64,7 @@ const assetTiers = [
     id: "bus-interstate-fleet",
     label: "Interstate Coach Fleet",
     category: "bus",
-    entryAmount: 4500000,
+    entryAmount: 15000,
     returnRate: 24,
     durationDays: 270,
     slotsUsed: 2,
@@ -79,7 +80,7 @@ const assetTiers = [
     id: "truck-pickup-fleet",
     label: "Pickup & Delivery Fleet",
     category: "truck",
-    entryAmount: 3500000,
+    entryAmount: 8000,
     returnRate: 22,
     durationDays: 210,
     slotsUsed: 2,
@@ -94,7 +95,7 @@ const assetTiers = [
     id: "truck-heavy-fleet",
     label: "Heavy Haulage & Tipper Fleet",
     category: "truck",
-    entryAmount: 8000000,
+    entryAmount: 30000,
     returnRate: 28,
     durationDays: 365,
     slotsUsed: 3,
@@ -108,7 +109,7 @@ const assetTiers = [
 ];
 
 router.get("/", (_req, res) => {
-  return res.json(assetTiers);
+  return res.json(assetTiers.map(t => ({ ...t, maxAmount: MAX_INVESTMENT })));
 });
 
 export default router;
