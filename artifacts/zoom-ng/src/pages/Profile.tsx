@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
-import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useGetDashboardSummary, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey } from "@workspace/api-client-react";
+import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useGetDashboardSummary, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey, sendSupportMessage } from "@/lib/firebase-api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Plus, Trash2, LogOut, Settings, CreditCard, HelpCircle, Copy, Users, Share2, MessageSquare, Phone, MapPin, Mail, Calendar, TrendingUp, Wallet, Activity } from "lucide-react";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/formatting";
 import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/lib/firebase";
 import { Textarea } from "@/components/ui/textarea";
 import AddFundsButton from "@/components/AddFundsButton";
 
@@ -26,7 +27,7 @@ export default function Profile() {
   const withdraw = useWithdrawFromWallet();
 
   const { toast } = useToast();
-  const { logout, getToken } = useAuth();
+  const { logout } = useAuth();
   const queryClient = useQueryClient();
 
   const [bankForm, setBankForm] = useState({ bankName: "", accountName: "", accountNumber: "" });
@@ -76,14 +77,10 @@ export default function Profile() {
 
   const handleSupport = async () => {
     if (!supportMsg.trim()) return;
-    const token = await getToken();
-    if (!token) return;
+    const user = auth?.currentUser;
+    if (!user) return;
     try {
-      await fetch("/api/support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: supportMsg }),
-      });
+      await sendSupportMessage(user.uid, supportMsg);
       toast({ title: "Message sent!", description: "Admin will reply shortly." });
       setSupportMsg("");
       setIsSupportOpen(false);

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { registerUser } from "@/lib/firebase-api";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
@@ -33,12 +34,7 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await loginWithGoogle();
-      const token = await user.getIdToken();
-      await fetch("/api/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ displayName: user.displayName || "User", email: user.email }),
-      });
+      await registerUser(user.uid, user.displayName || "User", user.email || "");
       setLocation("/dashboard");
     } catch (err: any) {
       toast({ title: "Google login failed", description: err.message, variant: "destructive" });

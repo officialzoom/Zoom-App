@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
-import { useGetAds, useGetDonationCampaigns, useSubmitAd, useMakeDonation, getGetAdsQueryKey, getGetDonationCampaignsQueryKey } from "@workspace/api-client-react";
+import { useGetAds, useGetDonationCampaigns, useSubmitAd, useMakeDonation, getGetAdsQueryKey, getGetDonationCampaignsQueryKey } from "@/lib/firebase-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

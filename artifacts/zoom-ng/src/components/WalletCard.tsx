@@ -1,6 +1,6 @@
 import React from "react";
 import { formatCurrency, formatPercentage } from "@/lib/formatting";
-import { Wallet } from "@workspace/api-client-react";
+import { Wallet } from "@/lib/firebase-api";
 import { TrendingUp, ArrowUpRight, ArrowDownLeft, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AssetTier, useCreateInvestment, getGetInvestmentsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import { AssetTier, useCreateInvestment, getGetInvestmentsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@/lib/firebase-api";
 import { formatCurrency, formatPercentage } from "@/lib/formatting";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
