@@ -28749,7 +28749,7 @@ var database;
 function required(name) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
-  return value;
+  return value.trim();
 }
 function resolveCredentials() {
   const rawKey = required("FIREBASE_PRIVATE_KEY");

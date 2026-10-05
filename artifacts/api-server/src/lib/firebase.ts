@@ -6,7 +6,7 @@ let database: Database | undefined;
 function required(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
-  return value;
+  return value.trim();
 }
 
 function resolveCredentials() {
