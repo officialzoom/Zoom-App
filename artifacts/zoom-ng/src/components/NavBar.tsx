@@ -18,7 +18,6 @@ export default function NavBar() {
   const navLinks = [
     { href: "/", label: "Dashboard" },
     { href: "/explore", label: "Explore" },
-    { href: "/ads", label: "Ads & Donations" },
     { href: "/profile", label: "Profile" },
   ];
 

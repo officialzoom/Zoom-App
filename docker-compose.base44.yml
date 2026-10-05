@@ -1,0 +1,52 @@
+services:
+  api:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.pnpm-store
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - SQUADCO_BASE_URL=https://sandbox-api-d.squadco.com
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    command: ["sh", "-ec", "npm install -g pnpm@10 && pnpm install --frozen-lockfile && exec pnpm --filter @workspace/api-server dev"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    restart: on-failure
+
+  web:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.pnpm-store
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - API_PROXY_TARGET=http://api:3001
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    command: ["sh", "-ec", "npm install -g pnpm@10 && pnpm install --frozen-lockfile && exec pnpm dev"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    restart: on-failure

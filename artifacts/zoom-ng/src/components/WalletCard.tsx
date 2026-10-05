@@ -4,6 +4,7 @@ import { Wallet } from "@workspace/api-client-react";
 import { TrendingUp, ArrowUpRight, ArrowDownLeft, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import AddFundsButton from "@/components/AddFundsButton";
 
 interface WalletCardProps {
   wallet: Wallet;
@@ -46,12 +47,11 @@ export default function WalletCard({ wallet }: WalletCardProps) {
       </div>
 
       <div className="flex gap-3 relative z-10">
-        <Button className="flex-1 rounded-xl h-12 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all group" asChild>
-          <Link href="/profile">
-            <ArrowUpRight className="w-5 h-5 mr-2 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-            Top Up
-          </Link>
-        </Button>
+        <AddFundsButton
+          variant="default"
+          className="flex-1 rounded-xl h-12 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+          label="Top Up"
+        />
         <Button variant="outline" className="flex-1 rounded-xl h-12 text-base font-semibold border-gray-200 hover:bg-gray-50" asChild>
           <Link href="/profile">
             <ArrowDownLeft className="w-5 h-5 mr-2" />
