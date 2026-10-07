@@ -3,16 +3,33 @@ import NavBar from "@/components/NavBar";
 import WalletCard from "@/components/WalletCard";
 import AssetTierCard from "@/components/AssetTierCard";
 import TransactionItem from "@/components/TransactionItem";
-import { useGetDashboardSummary, useGetAssets } from "@/lib/firebase-api";
+import { useGetDashboardSummary, useGetAssets, useGetUserProfile } from "@/lib/firebase-api";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AddFundsButton from "@/components/AddFundsButton";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary();
   const { data: assets, isLoading: isAssetsLoading } = useGetAssets();
+  const { data: profile } = useGetUserProfile();
+  const { toast } = useToast();
+  const copyReferralLink = async () => {
+    if (!profile?.referralCode) return;
+    const referralLink = `${window.location.origin}/signup?ref=${encodeURIComponent(profile.referralCode)}`;
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      toast({ title: "Referral link copied!" });
+    } catch {
+      toast({
+        title: "Could not copy referral link",
+        description: "Allow clipboard access in your browser and try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const featuredAssets = Array.isArray(assets) ? assets.slice(0, 3) : [];
   const recentTransactions = Array.isArray(summary?.recentTransactions)
@@ -96,7 +113,7 @@ export default function Dashboard() {
               <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
               <h2 className="text-2xl font-bold mb-3 relative z-10">Refer & Earn ₦5,000</h2>
               <p className="text-primary-foreground/80 mb-6 relative z-10 text-sm">Invite friends to invest on Zoom NG and earn rewards for every successful referral.</p>
-              <Button className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl h-12 font-bold shadow-lg">
+              <Button onClick={copyReferralLink} disabled={!profile?.referralCode} className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl h-12 font-bold shadow-lg">
                 Get Referral Link
               </Button>
             </section>

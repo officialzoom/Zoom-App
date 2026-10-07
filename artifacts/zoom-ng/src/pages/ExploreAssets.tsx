@@ -152,6 +152,14 @@ export default function ExploreAssets() {
       toast({ title: "Invalid duration", description: "Choose at least 1 investment day.", variant: "destructive" });
       return;
     }
+    if (days > selectedAsset.durationDays) {
+      toast({
+        title: "Duration too long",
+        description: `Maximum duration for this asset is ${selectedAsset.durationDays} days.`,
+        variant: "destructive",
+      });
+      return;
+    }
     createInvestment.mutate({ data: { assetId: selectedAsset.id, amount, lockDays: days } }, {
       onSuccess: () => {
         toast({ title: "Investment Successful!", description: `You invested ${formatCurrency(amount)} in ${selectedAsset.label}` });
@@ -328,13 +336,13 @@ export default function ExploreAssets() {
                 <div>
                   <label htmlFor="investment-days" className="text-sm font-semibold block mb-2">Investment duration (days)</label>
                   <Input id="investment-days" type="number" value={investDays} onChange={e => setInvestDays(Number(e.target.value))}
-                    min={1} step={1} className="h-12 rounded-xl bg-gray-50 border-gray-200 text-center" />
-                  <p className="text-xs text-muted-foreground mt-1">More days means a higher projected profit.</p>
+                    min={1} max={selectedAsset.durationDays} step={1} className="h-12 rounded-xl bg-gray-50 border-gray-200 text-center" />
+                  <p className="text-xs text-muted-foreground mt-1">Choose up to {selectedAsset.durationDays} days.</p>
                 </div>
                 {!!investAmount && Number(investAmount) >= selectedAsset.entryAmount && investDays > 0 && (
                   <div className="bg-primary/5 rounded-xl p-4 flex justify-between items-center">
                     <span className="text-sm font-medium">Projected profit</span>
-                    <span className="font-bold text-green-600 text-lg">+{formatCurrency(Number(investAmount) * (selectedAsset.returnRate / 100) * (investDays / selectedAsset.durationDays))}</span>
+                    <span className="font-bold text-green-600 text-lg">+{formatCurrency(Number(investAmount) * (selectedAsset.returnRate / 100) * Math.min(investDays / selectedAsset.durationDays, 1))}</span>
                   </div>
                 )}
                 <Button onClick={handleInvest} disabled={createInvestment.isPending} className="w-full h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/20">
