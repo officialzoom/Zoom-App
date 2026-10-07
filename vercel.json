@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "artifacts/zoom-ng/dist/public",
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
