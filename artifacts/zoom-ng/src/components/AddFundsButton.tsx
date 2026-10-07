@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/lib/firebase";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import { getGetWalletQueryKey, getGetDashboardSummaryQueryKey, initiateWalletFund, verifyWalletFund } from "@/lib/firebase-api";
 import { formatCurrency } from "@/lib/formatting";
 
 interface AddFundsButtonProps {
@@ -24,7 +24,6 @@ export default function AddFundsButton({ variant = "default", size = "default", 
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   const handleFund = async () => {
@@ -35,22 +34,16 @@ export default function AddFundsButton({ variant = "default", size = "default", 
     }
     setLoading(true);
     try {
-      const token = await getToken();
-      if (!token) {
+      const user = auth?.currentUser;
+      if (!user) {
         toast({ title: "Please log in first", variant: "destructive" });
         return;
       }
-      const res = await fetch("/api/wallet/fund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ amount: numAmount }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to initiate payment");
-
-      // Redirect to SquadCo checkout
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const { checkoutUrl } = await initiateWalletFund(user.uid, numAmount);
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        toast({ title: "Payment setup recorded", description: "SquadCo checkout requires a Cloud Function. Add the SquadCo secret key and deploy a Cloud Function to enable live payments." });
       }
     } catch (err: any) {
       toast({ title: "Payment failed", description: err.message, variant: "destructive" });
@@ -65,15 +58,12 @@ export default function AddFundsButton({ variant = "default", size = "default", 
     const fundRef = params.get("fund");
     if (fundRef) {
       (async () => {
-        const token = await getToken();
-        if (!token) return;
+        const user = auth?.currentUser;
+        if (!user) return;
         try {
-          const res = await fetch(`/api/wallet/fund/verify/${fundRef}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          if (data.verified) {
-            toast({ title: "Payment Successful", description: `${formatCurrency(data.amount)} added to your wallet` });
+          const result = await verifyWalletFund(user.uid, fundRef);
+          if (result.verified) {
+            toast({ title: "Payment Successful", description: `${formatCurrency(result.amount)} added to your wallet` });
             queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           }

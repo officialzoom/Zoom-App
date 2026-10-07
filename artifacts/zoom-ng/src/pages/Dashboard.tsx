@@ -3,7 +3,7 @@ import NavBar from "@/components/NavBar";
 import WalletCard from "@/components/WalletCard";
 import AssetTierCard from "@/components/AssetTierCard";
 import TransactionItem from "@/components/TransactionItem";
-import { useGetDashboardSummary, useGetAssets } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetAssets } from "@/lib/firebase-api";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";

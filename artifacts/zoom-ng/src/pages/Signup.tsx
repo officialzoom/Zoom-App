@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Eye, EyeOff, Gift } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { registerUser } from "@/lib/firebase-api";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Signup() {
@@ -22,14 +23,6 @@ export default function Signup() {
     if (ref) setForm(f => ({ ...f, referralCode: ref }));
   }, [search]);
 
-  const registerWithBackend = async (token: string, name: string, email: string, referralCode?: string) => {
-    await fetch("/api/user/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ displayName: name, email, referralCode: referralCode || undefined }),
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password.length < 6) {
@@ -39,8 +32,7 @@ export default function Signup() {
     setLoading(true);
     try {
       const user = await signup(form.email, form.password, form.name);
-      const token = await user.getIdToken();
-      await registerWithBackend(token, form.name, form.email, form.referralCode);
+      await registerUser(user.uid, form.name, form.email, form.referralCode || undefined);
       setLocation("/dashboard");
     } catch (err: any) {
       toast({ title: "Signup failed", description: err.message, variant: "destructive" });
@@ -53,8 +45,7 @@ export default function Signup() {
     setLoading(true);
     try {
       const user = await loginWithGoogle();
-      const token = await user.getIdToken();
-      await registerWithBackend(token, user.displayName || "User", user.email || "", form.referralCode);
+      await registerUser(user.uid, user.displayName || "User", user.email || "", form.referralCode || undefined);
       setLocation("/dashboard");
     } catch (err: any) {
       toast({ title: "Google signup failed", description: err.message, variant: "destructive" });

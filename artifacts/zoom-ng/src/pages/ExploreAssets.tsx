@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
-import { useGetAssets } from "@workspace/api-client-react";
+import { useGetAssets } from "@/lib/firebase-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/formatting";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useCreateInvestment, getGetInvestmentsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import { useCreateInvestment, getGetInvestmentsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@/lib/firebase-api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";

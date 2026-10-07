@@ -6,6 +6,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/formatting";
+import {
+  getAdminStats,
+  getAdminUsers,
+  getAdminWithdrawals,
+  getAdminSupport,
+  adminBanUser,
+  adminUnbanUser,
+  adminDeleteUser,
+  adminApproveWithdrawal,
+  adminRejectWithdrawal,
+  adminReplySupport,
+} from "@/lib/firebase-api";
 import { Users, TrendingUp, Clock, MessageSquare, Shield, Trash2, CheckCircle, XCircle, Reply, Zap, LogOut, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -13,18 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 const ADMIN_EMAIL = "officialzoom200@gmail.com";
 
-async function adminFetch(url: string, token: string, options: RequestInit = {}) {
-  const res = await fetch(url, {
-    ...options,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(options.headers || {}) },
-  });
-  if (!res.ok) throw new Error((await res.json()).error || "Request failed");
-  if (res.status === 204) return null;
-  return res.json();
-}
-
 export default function Admin() {
-  const { user, logout, loginWithGoogle, getToken } = useAuth();
+  const { user, logout, loginWithGoogle } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -39,15 +41,13 @@ export default function Admin() {
   const isAdmin = user?.email === ADMIN_EMAIL;
 
   const loadData = async () => {
-    const token = await getToken();
-    if (!token) return;
     setLoading(true);
     try {
       const [s, u, w, sup] = await Promise.all([
-        adminFetch("/api/admin/stats", token),
-        adminFetch("/api/admin/users", token),
-        adminFetch("/api/admin/withdrawals", token),
-        adminFetch("/api/admin/support", token),
+        getAdminStats(),
+        getAdminUsers(),
+        getAdminWithdrawals(),
+        getAdminSupport(),
       ]);
       setStats(s);
       setUsers(u);
@@ -77,20 +77,16 @@ export default function Admin() {
   };
 
   const banUser = async (userId: string, reason: string) => {
-    const token = await getToken();
-    if (!token) return;
     try {
-      await adminFetch(`/api/admin/users/${userId}/ban`, token, { method: "POST", body: JSON.stringify({ reason }) });
+      await adminBanUser(userId, reason);
       toast({ title: "User banned" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
   };
 
   const unbanUser = async (userId: string) => {
-    const token = await getToken();
-    if (!token) return;
     try {
-      await adminFetch(`/api/admin/users/${userId}/unban`, token, { method: "POST" });
+      await adminUnbanUser(userId);
       toast({ title: "User unbanned" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
@@ -98,40 +94,32 @@ export default function Admin() {
 
   const deleteUser = async (userId: string) => {
     if (!confirm("Delete this user permanently?")) return;
-    const token = await getToken();
-    if (!token) return;
     try {
-      await adminFetch(`/api/admin/users/${userId}`, token, { method: "DELETE" });
+      await adminDeleteUser(userId);
       toast({ title: "User deleted" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
   };
 
-  const approveWithdrawal = async (id: string) => {
-    const token = await getToken();
-    if (!token) return;
+  const approveWithdrawal = async (w: any) => {
     try {
-      await adminFetch(`/api/admin/withdrawals/${id}/approve`, token, { method: "POST" });
+      await adminApproveWithdrawal(w.userId, w.id);
       toast({ title: "Withdrawal approved" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
   };
 
-  const rejectWithdrawal = async (id: string) => {
-    const token = await getToken();
-    if (!token) return;
+  const rejectWithdrawal = async (w: any) => {
     try {
-      await adminFetch(`/api/admin/withdrawals/${id}/reject`, token, { method: "POST", body: JSON.stringify({ note: "Rejected by admin" }) });
+      await adminRejectWithdrawal(w.userId, w.id);
       toast({ title: "Withdrawal rejected" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
   };
 
-  const replyToSupport = async (id: string, reply: string) => {
-    const token = await getToken();
-    if (!token) return;
+  const replyToSupport = async (m: any, reply: string) => {
     try {
-      await adminFetch(`/api/admin/support/${id}/reply`, token, { method: "POST", body: JSON.stringify({ reply }) });
+      await adminReplySupport(m.userId, m.id, reply);
       toast({ title: "Reply sent" });
       setReplyText("");
       loadData();
@@ -295,10 +283,10 @@ export default function Admin() {
                       <p className="font-bold text-xl text-gray-900">{formatCurrency(w.amount)}</p>
                       {w.status === "pending" && (
                         <>
-                          <Button size="sm" onClick={() => approveWithdrawal(w.id)} className="rounded-xl bg-green-600 hover:bg-green-700 text-white">
+                          <Button size="sm" onClick={() => approveWithdrawal(w)} className="rounded-xl bg-green-600 hover:bg-green-700 text-white">
                             <CheckCircle className="w-4 h-4 mr-1" /> Approve
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => rejectWithdrawal(w.id)} className="rounded-xl text-red-600 border-red-200">
+                          <Button size="sm" variant="outline" onClick={() => rejectWithdrawal(w)} className="rounded-xl text-red-600 border-red-200">
                             <XCircle className="w-4 h-4 mr-1" /> Reject
                           </Button>
                         </>
@@ -346,7 +334,7 @@ export default function Admin() {
                         <div className="space-y-4 pt-2">
                           <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">{m.message}</p>
                           <Textarea placeholder="Your reply..." value={replyText} onChange={e => setReplyText(e.target.value)} className="rounded-xl" rows={4} />
-                          <Button onClick={() => replyToSupport(m.id, replyText)} className="w-full rounded-xl">Send Reply</Button>
+                          <Button onClick={() => replyToSupport(m, replyText)} className="w-full rounded-xl">Send Reply</Button>
                         </div>
                       </DialogContent>
                     </Dialog>

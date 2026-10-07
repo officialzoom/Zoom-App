@@ -34,11 +34,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let unsub = () => undefined;
-    void setPersistence(auth, browserLocalPersistence)
+    let unsub: () => void = () => {};
+    const authInstance = auth;
+    void setPersistence(authInstance, browserLocalPersistence)
       .catch((error) => console.error("[v0] Firebase persistence could not initialize", error))
       .finally(() => {
-        unsub = onAuthStateChanged(auth, (u) => {
+        unsub = onAuthStateChanged(authInstance, (u) => {
           setUser(u);
           setLoading(false);
         });

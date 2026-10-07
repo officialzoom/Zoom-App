@@ -8,7 +8,5 @@ export type DonationCampaign = {
   imageUrl: string;
 };
 
-export type DonationInput = {
-  amount: number;
-  message?: string;
-};
+// DonationInput is exported from its own dedicated file (donationInput.ts)
+// to avoid duplicate export conflicts.

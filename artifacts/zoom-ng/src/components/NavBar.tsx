@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Zap, Bell, Menu, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
-import { useGetWallet } from "@workspace/api-client-react";
+import { useGetWallet } from "@/lib/firebase-api";
 import { formatCurrency } from "@/lib/formatting";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

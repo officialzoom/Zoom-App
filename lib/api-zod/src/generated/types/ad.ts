@@ -7,11 +7,5 @@ export type Ad = {
   createdAt: string;
 };
 
-export type AdInput = {
-  title: string;
-  description: string;
-  amount: number;
-  imageUrl: string;
-};
-
-export type AdStatus = 'active' | 'expired' | 'paused';
+// AdInput and AdStatus are exported from their own dedicated files
+// (adInput.ts, adStatus.ts) to avoid duplicate export conflicts.

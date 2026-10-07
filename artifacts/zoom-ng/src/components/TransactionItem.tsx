@@ -1,5 +1,5 @@
 import React from "react";
-import { Transaction } from "@workspace/api-client-react";
+import { Transaction } from "@/lib/firebase-api";
 import { formatCurrency, formatDate } from "@/lib/formatting";
 import { ArrowDownLeft, ArrowUpRight, Plus, Minus } from "lucide-react";
 
