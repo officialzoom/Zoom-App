@@ -223,12 +223,12 @@ const ASSET_TIER_MAP: Record<string, { label: string; returnRate: number; durati
 // Query keys (for cache invalidation — same names as the old API client)
 // ---------------------------------------------------------------------------
 export const getGetAssetsQueryKey = () => ["assets"] as const;
-export const getGetWalletQueryKey = () => ["wallet"] as const;
-export const getGetDashboardSummaryQueryKey = () => ["dashboard-summary"] as const;
-export const getGetUserProfileQueryKey = () => ["user-profile"] as const;
-export const getGetBanksQueryKey = () => ["banks"] as const;
-export const getGetInvestmentsQueryKey = () => ["investments"] as const;
-export const getGetAdsQueryKey = () => ["ads"] as const;
+export const getGetWalletQueryKey = () => ["wallet", auth?.currentUser?.uid ?? null] as const;
+export const getGetDashboardSummaryQueryKey = () => ["dashboard-summary", auth?.currentUser?.uid ?? null] as const;
+export const getGetUserProfileQueryKey = () => ["user-profile", auth?.currentUser?.uid ?? null] as const;
+export const getGetBanksQueryKey = () => ["banks", auth?.currentUser?.uid ?? null] as const;
+export const getGetInvestmentsQueryKey = () => ["investments", auth?.currentUser?.uid ?? null] as const;
+export const getGetAdsQueryKey = () => ["ads", auth?.currentUser?.uid ?? null] as const;
 export const getGetDonationCampaignsQueryKey = () => ["donation-campaigns"] as const;
 
 // ---------------------------------------------------------------------------
@@ -476,6 +476,9 @@ export function useCreateInvestment() {
       const { assetId, amount, lockDays } = input.data;
       const tier = ASSET_TIER_MAP[assetId];
       if (!tier) throw new Error("Invalid asset selected");
+      if (!Number.isInteger(lockDays) || lockDays < 1 || lockDays > tier.durationDays) {
+        throw new Error(`Investment duration must be between 1 and ${tier.durationDays} days`);
+      }
       if (amount < tier.entryAmount) throw new Error(`Minimum investment for this asset is ₦${tier.entryAmount.toLocaleString("en-NG")}`);
       if (amount > MAX_INVESTMENT) throw new Error(`Maximum investment is ₦${MAX_INVESTMENT.toLocaleString("en-NG")}`);
 

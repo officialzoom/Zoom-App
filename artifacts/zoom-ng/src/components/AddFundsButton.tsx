@@ -118,10 +118,10 @@ export default function AddFundsButton({ variant = "default", size = "default", 
             disabled={loading}
             className="w-full h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/20"
           >
-            {loading ? "Redirecting..." : `Add ${amount ? formatCurrency(Number(amount)) : "Funds"}`}
+            {loading ? "Saving request..." : `Request ${amount ? formatCurrency(Number(amount)) : "Funds"}`}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            You will be redirected to SquadCo secure checkout
+            SquadCo checkout is not configured yet. No payment will be charged and funds will not be added.
           </p>
         </div>
       </DialogContent>
