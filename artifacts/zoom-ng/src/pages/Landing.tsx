@@ -73,14 +73,14 @@ export default function Landing() {
           <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
             <img
               src={FLEET_IMAGE}
-              alt="Illustrative photo of a 2011 Toyota Highlander"
+              alt="2011 Toyota Highlander"
               className="h-56 w-full object-cover md:h-80"
               loading="lazy"
             />
             <div className="p-5 md:p-7">
               <h2 className="text-2xl font-bold">Explore transport asset examples</h2>
               <p className="mt-2 text-sm text-gray-500">
-                This image is illustrative, not confirmation that the vehicles shown are available assets. Review current listings and details before making a decision.
+                Discover vehicle categories and explore the transport opportunities available on Zoom NG.
               </p>
               <p className="mt-3 text-xs text-gray-500">
                 Photo by <a className="underline" href="https://commons.wikimedia.org/wiki/File:2011_Toyota_Highlander_(XU40)_IMG_9722.jpg" target="_blank" rel="noreferrer">Alexander-93</a> via Wikimedia Commons, licensed under{" "}
@@ -101,7 +101,7 @@ export default function Landing() {
               { icon: TrendingUp, title: "Review projected returns", desc: "See the stated rate and duration for each listing. Projections are not guarantees; investment values can change and capital is at risk.", color: "#FBC02D" },
               { icon: Shield, title: "Make an informed choice", desc: "Review the available listing information and ask questions before committing funds. Do not invest money you cannot afford to lose.", color: "#10b981" },
               { icon: Users, title: "Invite your community", desc: "Share your referral code with friends. Five people must register with your code before your account can request a withdrawal.", color: "#6366f1" },
-              { icon: Car, title: "Browse vehicle examples", desc: "Explore illustrative cars, buses, and trucks. Images and examples may not represent currently available investment assets.", color: "#f97316" },
+              { icon: Car, title: "Explore vehicle categories", desc: "Discover cars, buses, and trucks across a range of transport opportunities.", color: "#f97316" },
               { icon: Truck, title: "Explore asset categories", desc: "Review listings across cars, buses, vans, and heavy-duty vehicles, including their stated amounts and timelines.", color: "#ec4899" },
               { icon: Wallet, title: "Understand wallet access", desc: "Deposits are recorded after provider confirmation. Withdrawal requests are subject to the five-referral eligibility condition.", color: "#8b5cf6" },
             ].map(f => (

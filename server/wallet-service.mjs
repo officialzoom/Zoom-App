@@ -18,6 +18,20 @@ function recordId(database, path) {
   return key;
 }
 
+function logUserProfileContext(operation, database, uid, details = {}) {
+  const uidFingerprint = createHash("sha256").update(uid).digest("hex").slice(0, 12);
+  const databaseFingerprint = createHash("sha256")
+    .update(database.ref().toString())
+    .digest("hex")
+    .slice(0, 12);
+  console.warn("Firebase user profile diagnostic:", {
+    operation,
+    uidFingerprint,
+    databaseFingerprint,
+    ...details,
+  });
+}
+
 export async function registerUser(user, input) {
   const database = getRealtimeDatabase();
   const uid = user.uid;
@@ -49,6 +63,10 @@ export async function registerUser(user, input) {
     created = true;
     return defaults;
   }, undefined, false);
+  logUserProfileContext("register", database, uid, {
+    created: Boolean(result.committed && created),
+    profileExists: Boolean(result.snapshot.val()),
+  });
   const savedProfile = result.snapshot.val() ?? defaults;
   const savedReferralCode = String(savedProfile.referredBy ?? "").trim().toUpperCase();
   if (savedReferralCode && savedReferralCode !== defaults.referralCode) {
@@ -133,6 +151,7 @@ export async function creditUserWallet(admin, input) {
   }, undefined, false);
 
   if (outcome === "missing") {
+    logUserProfileContext("admin-credit-missing", database, uid);
     throw new HttpError(
       404,
       "That user's profile was not found in the Realtime Database connected to the admin API. Refresh the user list; if the user still appears, verify FIREBASE_DATABASE_URL matches the frontend Firebase database URL in Vercel.",
@@ -330,6 +349,7 @@ export async function createInvestment(uid, input) {
 
   if (!result.committed) {
     if (outcome === "insufficient") throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
+    logUserProfileContext("investment-missing", database, uid);
     throw new HttpError(404, "Your account could not be found.");
   }
   return {
