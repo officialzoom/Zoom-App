@@ -19,7 +19,7 @@ export function getFirebaseAdminApp() {
   const projectId = requiredEnvironment("FIREBASE_PROJECT_ID");
   const clientEmail = requiredEnvironment("FIREBASE_CLIENT_EMAIL");
   const privateKey = requiredEnvironment("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
-  const databaseURL = requiredEnvironment("FIREBASE_DATABASE_URL");
+  const databaseURL = process.env.FIREBASE_DATABASE_URL || requiredEnvironment("FIREBASE_DATABSE_URL");
 
   return initializeApp(
     {
