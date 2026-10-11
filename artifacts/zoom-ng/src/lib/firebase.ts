@@ -15,12 +15,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const missingFirebaseVariables = Object.entries(firebaseConfig)
+const missingFirebaseVariables = Object.entries({
+  VITE_FIREBASE_API_KEY: firebaseConfig.apiKey,
+  VITE_FIREBASE_PROJECT_ID: firebaseConfig.projectId,
+  VITE_FIREBASE_DATABASE_URL: firebaseConfig.databaseURL,
+  VITE_FIREBASE_MESSAGING_SENDER_ID: firebaseConfig.messagingSenderId,
+  VITE_FIREBASE_APP_ID: firebaseConfig.appId,
+})
   .filter(([, value]) => !value)
   .map(([key]) => key);
 
 if (missingFirebaseVariables.length > 0) {
-  console.error(`[v0] Missing Firebase web configuration: ${missingFirebaseVariables.join(", ")}`);
+  console.error(`Missing Firebase web environment variables: ${missingFirebaseVariables.join(", ")}`);
 }
 
 export const app = initializeApp(firebaseConfig);

@@ -4,7 +4,7 @@ import {
   verifySquadWebhookSignature,
 } from "../../server/payment-service.mjs";
 
-export default endpoint("POST", async (request) => {
+export const POST = endpoint("POST", async (request) => {
   const rawBody = await request.text();
   let payload;
   try {

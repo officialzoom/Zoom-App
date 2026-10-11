@@ -20,22 +20,20 @@ export function jsonResponse(payload, status = 200, headers = {}) {
 }
 
 export function endpoint(method, handler) {
-  return {
-    async fetch(request) {
-      if (request.method !== method) {
-        return jsonResponse({ error: "Method not allowed." }, 405, { Allow: method });
-      }
-      try {
-        return await handler(request);
-      } catch (error) {
-        const status = Number(error?.status) || 500;
-        if (status >= 500) console.error("Vercel API request failed:", error?.message ?? "Unknown error");
-        return jsonResponse(
-          { error: status >= 500 ? (error?.status ? error.message : "The request could not be completed.") : error.message },
-          status,
-        );
-      }
-    },
+  return async function handleRequest(request) {
+    if (request.method !== method) {
+      return jsonResponse({ error: "Method not allowed." }, 405, { Allow: method });
+    }
+    try {
+      return await handler(request);
+    } catch (error) {
+      const status = Number(error?.status) || 500;
+      if (status >= 500) console.error("Vercel API request failed:", error?.message ?? "Unknown error");
+      return jsonResponse(
+        { error: status >= 500 ? (error?.status ? error.message : "The request could not be completed.") : error.message },
+        status,
+      );
+    }
   };
 }
 

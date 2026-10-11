@@ -248,11 +248,22 @@ async function postApi<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || payload.message || "The secure server request failed.");
+  const responseBody = await response.text();
+  let payload: { error?: string; message?: string } = {};
+  try {
+    payload = JSON.parse(responseBody);
+  } catch {
+    // Vercel platform errors may be plain text instead of the API's JSON response.
   }
-  return payload as T;
+  if (!response.ok) {
+    throw new Error(
+      payload.error
+      || payload.message
+      || responseBody.trim()
+      || `The secure server request failed (HTTP ${response.status}).`,
+    );
+  }
+  return JSON.parse(responseBody) as T;
 }
 
 function userDoc(uid: string) {

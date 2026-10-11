@@ -6,7 +6,7 @@ import {
 } from "../../server/payment-service.mjs";
 import { HttpError } from "../../server/http.mjs";
 
-export default endpoint("POST", async (request) => {
+export const POST = endpoint("POST", async (request) => {
   const user = await authenticate(request);
   const input = await readJson(request);
   const transactionRef = requireSafeId(input.transactionRef, "Transaction reference");
