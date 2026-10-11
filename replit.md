@@ -36,7 +36,6 @@ Nigerian vehicle-investment platform for exploring transport fleets, managing a 
 - Financial writes use Firebase Admin on the server; Realtime Database rules deny client writes to protected balances and transactions.
 - Firestore is retained only as the source for the explicit migration copy. Do not add Firestore imports to the active browser data layer.
 - Review and deploy `database.rules.json` to Firebase separately from deploying the Vercel app.
-- Cloudflare Worker payment verification is a separate follow-up; `npx wrangler deploy` is not configured by this Vercel setup.
 
 ## Project conventions
 
