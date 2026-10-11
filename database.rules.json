@@ -4,25 +4,26 @@
     ".write": false,
     "users": {
       ".read": "auth != null && auth.token.email === 'officialzoom200@gmail.com'",
+      ".indexOn": ["referralCode"],
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
         ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'",
         "banks": {
           "$bankId": {
             ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
-            ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')"
+            ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && !root.child('users').child(auth.uid).child('banned').val()))"
           }
         },
         "ads": {
           "$adId": {
             ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
-            ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')"
+            ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && !root.child('users').child(auth.uid).child('banned').val()))"
           }
         },
         "support": {
           "$ticketId": {
             ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
-            ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && !data.exists() && newData.exists()))"
+            ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && !root.child('users').child(auth.uid).child('banned').val() && !data.exists() && newData.exists()))"
           }
         },
         "investments": {

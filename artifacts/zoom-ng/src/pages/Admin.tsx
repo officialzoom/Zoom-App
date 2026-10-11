@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,14 @@ import {
   getAdminWithdrawals,
   getAdminSupport,
   adminBanUser,
+  adminCreditUserWallet,
   adminUnbanUser,
   adminDeleteUser,
   adminApproveWithdrawal,
   adminRejectWithdrawal,
   adminReplySupport,
 } from "@/lib/firebase-api";
-import { Users, TrendingUp, Clock, MessageSquare, Shield, Trash2, CheckCircle, XCircle, Reply, Zap, LogOut, RefreshCw } from "lucide-react";
+import { Users, TrendingUp, Clock, MessageSquare, Shield, Trash2, CheckCircle, XCircle, Reply, Zap, LogOut, RefreshCw, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,11 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [replyText, setReplyText] = useState("");
+  const [creditUser, setCreditUser] = useState<{ id: string; displayName: string; balance: number } | null>(null);
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditReason, setCreditReason] = useState("");
+  const [crediting, setCrediting] = useState(false);
+  const creditRequest = useRef<{ signature: string; id: string } | null>(null);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
 
@@ -90,6 +96,38 @@ export default function Admin() {
       toast({ title: "User unbanned" });
       loadData();
     } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+  };
+
+  const creditWallet = async () => {
+    const amount = Number(creditAmount);
+    const reason = creditReason.trim();
+    if (!creditUser || !Number.isSafeInteger(amount) || amount < 1 || reason.length < 3) {
+      toast({ title: "Invalid wallet credit", description: "Enter a positive whole-naira amount and a reason of at least 3 characters.", variant: "destructive" });
+      return;
+    }
+    setCrediting(true);
+    try {
+      const signature = JSON.stringify([creditUser.id, amount, reason]);
+      if (creditRequest.current?.signature !== signature) {
+        creditRequest.current = { signature, id: crypto.randomUUID() };
+      }
+      const result = await adminCreditUserWallet(creditUser.id, amount, reason, creditRequest.current.id);
+      toast({
+        title: result.alreadyCredited ? "Wallet credit already applied" : "Wallet credited",
+        description: result.alreadyCredited
+          ? `This ${formatCurrency(amount)} credit was already applied; no additional funds were added.`
+          : `${formatCurrency(amount)} added to ${creditUser.displayName}'s wallet.`,
+      });
+      creditRequest.current = null;
+      setCreditUser(null);
+      setCreditAmount("");
+      setCreditReason("");
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Wallet credit failed", description: err.message, variant: "destructive" });
+    } finally {
+      setCrediting(false);
+    }
   };
 
   const deleteUser = async (userId: string) => {
@@ -233,6 +271,18 @@ export default function Admin() {
                       <p className="text-xs text-gray-400">Balance</p>
                       <p className="font-bold text-gray-900">{formatCurrency(u.wallet?.balance ?? 0)}</p>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setCreditUser({ id: u.id, displayName: u.displayName, balance: u.wallet?.balance ?? 0 });
+                        setCreditAmount("");
+                        setCreditReason("");
+                      }}
+                      className="rounded-xl text-green-700 border-green-200 hover:bg-green-50"
+                    >
+                      <Wallet className="w-4 h-4 mr-1" /> Credit
+                    </Button>
                     {u.banned ? (
                       <Button size="sm" variant="outline" onClick={() => unbanUser(u.id)} className="rounded-xl text-green-600 border-green-200 hover:bg-green-50">
                         <CheckCircle className="w-4 h-4 mr-1" /> Unban
@@ -253,12 +303,63 @@ export default function Admin() {
                         </DialogContent>
                       </Dialog>
                     )}
-                    <Button size="sm" variant="outline" onClick={() => deleteUser(u.id)} className="rounded-xl text-red-600 border-red-200 hover:bg-red-50">
+                    <Button size="sm" variant="outline" onClick={() => deleteUser(u.id)} disabled={u.id === user.uid} title={u.id === user.uid ? "The administrator account cannot be deleted here" : undefined} className="rounded-xl text-red-600 border-red-200 hover:bg-red-50">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
               ))}
+              <Dialog
+                open={creditUser !== null}
+                onOpenChange={(open) => {
+                  if (!open && !crediting) setCreditUser(null);
+                }}
+              >
+                <DialogContent className="rounded-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Credit wallet: {creditUser?.displayName}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Current balance: {formatCurrency(creditUser?.balance ?? 0)}. This action will be recorded in the user's transaction history.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="credit-amount">Amount (₦)</Label>
+                      <Input
+                        id="credit-amount"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={creditAmount}
+                        onChange={(event) => setCreditAmount(event.target.value)}
+                        placeholder="Enter whole-naira amount"
+                        disabled={crediting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="credit-reason">Reason (required)</Label>
+                      <Textarea
+                        id="credit-reason"
+                        value={creditReason}
+                        onChange={(event) => setCreditReason(event.target.value)}
+                        placeholder="Explain why this wallet is being credited"
+                        maxLength={500}
+                        disabled={crediting}
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <Button onClick={creditWallet} disabled={crediting} className="w-full rounded-xl">
+                      {crediting ? "Crediting wallet..." : `Credit ${creditAmount ? formatCurrency(Number(creditAmount)) : "wallet"}`}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {users.length === 0 && (
+                <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No users found</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 

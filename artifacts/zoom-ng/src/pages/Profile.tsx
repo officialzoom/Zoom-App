@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "wouter";
 import NavBar from "@/components/NavBar";
 import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useGetDashboardSummary, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey, sendSupportMessage } from "@/lib/firebase-api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -211,7 +212,12 @@ export default function Profile() {
                     <span className="font-bold text-lg">Referral Program</span>
                   </div>
                   <p className="text-primary-foreground/80 text-sm mb-4">
-                    {canWithdraw ? "Withdrawal unlocked! You have enough referrals." : `Invite ${referralsNeeded} more friend${referralsNeeded !== 1 ? "s" : ""} to unlock withdrawals.`}
+                    {canWithdraw
+                      ? "You meet the referral-count condition to request a withdrawal."
+                      : `Invite ${referralsNeeded} more friend${referralsNeeded !== 1 ? "s" : ""} to register with your code to become eligible to request a withdrawal.`}
+                  </p>
+                  <p className="text-primary-foreground/70 text-xs mb-4">
+                    Referral sign-ups are required for withdrawal eligibility. A cash referral bonus is not currently promised.
                   </p>
                   <div className="bg-white/20 rounded-xl p-3 mb-3">
                     <p className="text-xs text-primary-foreground/70 mb-1">Your referral code</p>
@@ -262,7 +268,10 @@ export default function Profile() {
               {!canWithdraw && (
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
                   <p className="text-sm font-semibold text-amber-700 mb-1">🔒 Withdrawal Locked</p>
-                  <p className="text-sm text-amber-600">You need {referralsNeeded} more referral{referralsNeeded !== 1 ? "s" : ""} to unlock withdrawals. Share your referral link to invite friends!</p>
+                  <p className="text-sm text-amber-600">
+                    You need {referralsNeeded} more person{referralsNeeded !== 1 ? "s" : ""} to register with your referral code before you can request a withdrawal. Invite friends if they’re interested, and review the{" "}
+                    <Link href="/terms" className="font-semibold underline">withdrawal terms</Link>.
+                  </p>
                 </div>
               )}
               <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>

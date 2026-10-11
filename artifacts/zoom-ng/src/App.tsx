@@ -13,6 +13,8 @@ import Dashboard from "@/pages/Dashboard";
 import ExploreAssets from "@/pages/ExploreAssets";
 import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
 import { initApiAuth } from "@/lib/api";
 
 initApiAuth();
@@ -31,6 +33,8 @@ function Router() {
       <Route path="/" component={user ? Dashboard : Landing} />
       <Route path="/login" component={user ? Dashboard : Login} />
       <Route path="/signup" component={user ? Dashboard : Signup} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/admin" component={Admin} />
       <Route path="/dashboard">
         <ProtectedRoute><Dashboard /></ProtectedRoute>

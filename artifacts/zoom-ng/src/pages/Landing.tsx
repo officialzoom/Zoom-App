@@ -1,7 +1,11 @@
 import React from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Zap, TrendingUp, Shield, Users, Car, Truck, ChevronRight, Star } from "lucide-react";
+import { Zap, TrendingUp, Shield, Users, Car, Truck, ChevronRight, Star, Wallet } from "lucide-react";
+import TelegramCta from "@/components/TelegramCta";
+
+const FLEET_IMAGE =
+  "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg/960px-2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg";
 
 export default function Landing() {
   return (
@@ -32,15 +36,15 @@ export default function Landing() {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-8">
-            <Star className="w-4 h-4 fill-current" /> #1 Vehicle Investment Platform in Nigeria
+            <Star className="w-4 h-4 fill-current" /> Transport asset opportunities in Nigeria
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
-            Invest in Nigerian<br />
-            <span className="text-primary">Transport Fleets</span><br />
-            & Earn More
+            Explore Nigerian<br />
+            <span className="text-primary">Transport Assets</span><br />
+            with clarity
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-            Join thousands of Nigerians earning passive income by investing in verified transport assets — cars, buses, and trucks — with returns up to 35% per cycle.
+            Review vehicle asset listings, timelines, and risks before deciding whether an opportunity is right for you. Investing involves risk, and returns are not guaranteed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/signup">
@@ -54,13 +58,35 @@ export default function Landing() {
               </Button>
             </Link>
           </div>
-          <div className="flex items-center justify-center gap-8 mt-12 text-center">
-            {[{ n: "12,000+", l: "Active Investors" }, { n: "₦2.4B+", l: "Total Invested" }, { n: "35%", l: "Max Returns" }].map(s => (
-              <div key={s.l}>
-                <div className="text-2xl font-extrabold text-gray-900">{s.n}</div>
-                <div className="text-sm text-gray-500">{s.l}</div>
-              </div>
-            ))}
+          <div className="mt-5 flex justify-center">
+            <TelegramCta
+              label="Get official updates on Telegram"
+              variant="ghost"
+              className="text-gray-600 hover:text-primary"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-14 bg-gray-50">
+        <div className="container mx-auto max-w-5xl">
+          <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <img
+              src={FLEET_IMAGE}
+              alt="Illustrative photo of a 2011 Toyota Highlander"
+              className="h-56 w-full object-cover md:h-80"
+              loading="lazy"
+            />
+            <div className="p-5 md:p-7">
+              <h2 className="text-2xl font-bold">Explore transport asset examples</h2>
+              <p className="mt-2 text-sm text-gray-500">
+                This image is illustrative, not confirmation that the vehicles shown are available assets. Review current listings and details before making a decision.
+              </p>
+              <p className="mt-3 text-xs text-gray-500">
+                Photo by <a className="underline" href="https://commons.wikimedia.org/wiki/File:2011_Toyota_Highlander_(XU40)_IMG_9722.jpg" target="_blank" rel="noreferrer">Alexander-93</a> via Wikimedia Commons, licensed under{" "}
+                <a className="underline" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -72,12 +98,12 @@ export default function Landing() {
           <p className="text-gray-500 text-center mb-14 max-w-lg mx-auto">Built for Nigerians who want their money working harder for them.</p>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: TrendingUp, title: "High Yield Returns", desc: "Earn up to 35% returns per investment cycle on verified transport assets across Nigeria.", color: "#FBC02D" },
-              { icon: Shield, title: "Secure & Verified", desc: "All vehicle assets are verified and insured. Your investment is protected at every step.", color: "#10b981" },
-              { icon: Users, title: "Referral Rewards", desc: "Earn ₦5,000 bonus for every friend you refer who makes their first investment.", color: "#6366f1" },
-              { icon: Car, title: "Browse Real Fleets", desc: "View actual photos of cars, buses, and trucks you're investing in before committing.", color: "#f97316" },
-              { icon: Truck, title: "Multiple Asset Classes", desc: "Choose from economy cars, luxury vehicles, minibuses, vans, and heavy-duty trucks.", color: "#ec4899" },
-              { icon: Zap, title: "Instant Wallet", desc: "Fund your wallet instantly and start earning from day one. Withdraw when you're ready.", color: "#8b5cf6" },
+              { icon: TrendingUp, title: "Review projected returns", desc: "See the stated rate and duration for each listing. Projections are not guarantees; investment values can change and capital is at risk.", color: "#FBC02D" },
+              { icon: Shield, title: "Make an informed choice", desc: "Review the available listing information and ask questions before committing funds. Do not invest money you cannot afford to lose.", color: "#10b981" },
+              { icon: Users, title: "Invite your community", desc: "Share your referral code with friends. Five people must register with your code before your account can request a withdrawal.", color: "#6366f1" },
+              { icon: Car, title: "Browse vehicle examples", desc: "Explore illustrative cars, buses, and trucks. Images and examples may not represent currently available investment assets.", color: "#f97316" },
+              { icon: Truck, title: "Explore asset categories", desc: "Review listings across cars, buses, vans, and heavy-duty vehicles, including their stated amounts and timelines.", color: "#ec4899" },
+              { icon: Wallet, title: "Understand wallet access", desc: "Deposits are recorded after provider confirmation. Withdrawal requests are subject to the five-referral eligibility condition.", color: "#8b5cf6" },
             ].map(f => (
               <div key={f.title} className="bg-gray-50 rounded-3xl p-6 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: `${f.color}20` }}>
@@ -95,12 +121,12 @@ export default function Landing() {
       <section className="py-20 px-4 bg-gray-50">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-          <p className="text-gray-500 mb-14">Start earning in 3 simple steps</p>
+          <p className="text-gray-500 mb-14">Review each step and the conditions before you commit funds.</p>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { n: "01", t: "Create Account", d: "Sign up with your email and verify your identity in minutes." },
-              { n: "02", t: "Fund Your Wallet", d: "Add money to your Zoom NG wallet via bank transfer or USSD." },
-              { n: "03", t: "Choose & Invest", d: "Browse available fleets, pick your asset, and start earning returns." },
+              { n: "01", t: "Review the conditions", d: "Read the investment risks and withdrawal eligibility requirement before signing up or adding funds." },
+              { n: "02", t: "Create and fund an account", d: "Create an account and use the available payment provider to fund your wallet." },
+              { n: "03", t: "Review listings", d: "Compare the stated asset details, amounts, and timelines before deciding whether to invest." },
             ].map(s => (
               <div key={s.n} className="text-center">
                 <div className="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center text-2xl font-extrabold mx-auto mb-4">{s.n}</div>
@@ -117,36 +143,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Terms & Privacy */}
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto max-w-3xl">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold mb-4">Terms & Conditions</h3>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>By using Zoom NG, you agree to invest with full understanding of the risks involved in vehicle asset investments.</p>
-                <p>All investments are subject to market conditions. Past returns do not guarantee future performance.</p>
-                <p>Users must be 18+ and provide valid identification for KYC verification before withdrawal.</p>
-                <p>Zoom NG reserves the right to suspend accounts found to be in violation of our community guidelines.</p>
-                <p>Withdrawals require 5 successful referrals to unlock. This ensures our community grows sustainably.</p>
-                <p>Minimum investment amount is ₦5,000 per asset tier. Maximum is ₦10,000,000 per cycle.</p>
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold mb-4">Privacy Policy</h3>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>We collect only the data necessary to provide our investment services: name, email, phone, and bank details.</p>
-                <p>Your financial data is encrypted using bank-grade 256-bit SSL encryption and never sold to third parties.</p>
-                <p>We use Firebase Authentication for secure login. Your password is never stored in plain text.</p>
-                <p>Transaction history and wallet data are stored securely on our servers in compliance with NDPR.</p>
-                <p>You may request deletion of your account and all associated data at any time by contacting support.</p>
-                <p>We may use anonymized, aggregated data to improve our platform and investment analytics.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-12 px-4">
         <div className="container mx-auto max-w-5xl">
@@ -157,9 +153,16 @@ export default function Landing() {
               </div>
               <span className="font-bold text-white text-xl">Zoom NG</span>
             </div>
-            <p className="text-sm text-center">© 2026 Zoom NG. All rights reserved. Regulated by the Nigerian Investment Authority.</p>
-            <div className="flex gap-6 text-sm">
-              <a href="mailto:support@zoomng.com" className="hover:text-white transition-colors">support@zoomng.com</a>
+            <p className="text-sm text-center">© 2026 Zoom NG. All rights reserved.</p>
+            <div className="flex flex-wrap justify-center gap-6 text-sm">
+              <Link href="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <a href="mailto:support@zoomng.com" className="hover:text-white transition-colors">Support</a>
+              <TelegramCta
+                label="Follow official Telegram updates"
+                variant="ghost"
+                className="h-auto min-h-0 p-0 text-gray-400 hover:bg-transparent hover:text-white"
+              />
             </div>
           </div>
         </div>

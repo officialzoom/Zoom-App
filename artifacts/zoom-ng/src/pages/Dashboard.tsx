@@ -111,8 +111,10 @@ export default function Dashboard() {
 
             <section className="bg-primary text-primary-foreground rounded-3xl p-8 relative overflow-hidden" style={{ boxShadow: "0 10px 40px -10px rgba(251,192,45,0.4)" }}>
               <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-              <h2 className="text-2xl font-bold mb-3 relative z-10">Refer & Earn ₦5,000</h2>
-              <p className="text-primary-foreground/80 mb-6 relative z-10 text-sm">Invite friends to invest on Zoom NG and earn rewards for every successful referral.</p>
+              <h2 className="text-2xl font-bold mb-3 relative z-10">Invite Friends</h2>
+              <p className="text-primary-foreground/80 mb-6 relative z-10 text-sm">
+                Know someone who may be interested? Share your link. Five people must register with your code before you can request a withdrawal. A cash referral bonus is not currently promised.
+              </p>
               <Button onClick={copyReferralLink} disabled={!profile?.referralCode} className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl h-12 font-bold shadow-lg">
                 Get Referral Link
               </Button>

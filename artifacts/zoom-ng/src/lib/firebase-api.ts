@@ -44,11 +44,12 @@ export interface Wallet {
 
 export interface Transaction {
   id: string;
-  type: "return" | "deposit" | "invest" | "withdrawal";
+  type: "return" | "deposit" | "admin_credit" | "invest" | "withdrawal" | "withdrawal_refund" | "donation";
   label: string;
   amount: number;
   date: string;
   status: "completed" | "active" | "pending";
+  description?: string;
 }
 
 export interface BankAccount {
@@ -357,7 +358,7 @@ export function useGetWallet() {
       txSnap.forEach(doc => {
         const tx = doc.data();
         const txDate = tx.date?.toDate ? tx.date.toDate().getTime() : Number(tx.date ?? 0);
-        if (txDate >= weekAgo && (tx.type === "return" || tx.type === "deposit")) {
+        if (txDate >= weekAgo && (tx.type === "return" || tx.type === "deposit" || tx.type === "admin_credit")) {
           weeklyChange += Number(tx.amount ?? 0);
         }
       });
@@ -413,9 +414,10 @@ export function useGetDashboardSummary() {
           amount: Number(tx.amount ?? 0),
           date: new Date(txDate).toISOString(),
           status: tx.status ?? "completed",
+          description: tx.reason,
         };
         recentTransactions.push(item);
-        if (txDate >= weekAgo && (tx.type === "return" || tx.type === "deposit")) {
+        if (txDate >= weekAgo && (tx.type === "return" || tx.type === "deposit" || tx.type === "admin_credit")) {
           weeklyChange += Number(tx.amount ?? 0);
         }
       });
@@ -618,14 +620,19 @@ export function useGetDonationCampaigns() {
 export function useMakeDonation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { campaignId: string; data: { amount: number } }) => {
+    mutationFn: async (input: { campaignId: string; requestId: string; data: { amount: number } }) => {
       getUid();
       return postApi<{ success: boolean }>("/api/donations/create", {
         campaignId: input.campaignId,
         amount: input.data.amount,
+        requestId: input.requestId,
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetDonationCampaignsQueryKey() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetDonationCampaignsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+    },
   });
 }
 
@@ -784,20 +791,37 @@ export async function adminBanUser(userId: string, reason: string) {
   await updateDoc(userDoc(userId), { banned: true, bannedReason: reason });
 }
 
+export async function adminCreditUserWallet(userId: string, amount: number, reason: string, requestId: string) {
+  return postApi<{ credited: boolean; alreadyCredited: boolean; balance: number }>("/api/admin/wallet/credit", {
+    userId,
+    amount,
+    reason,
+    requestId,
+  });
+}
+
 export async function adminUnbanUser(userId: string) {
   await updateDoc(userDoc(userId), { banned: false, bannedReason: "" });
 }
 
 export async function adminDeleteUser(userId: string) {
-  await deleteDoc(userDoc(userId));
+  return postApi<{ deleted: boolean }>("/api/admin/users/delete", { userId });
 }
 
 export async function adminApproveWithdrawal(userId: string, withdrawalId: string) {
-  await updateDoc(doc(db, "users", userId, "withdrawals", withdrawalId), { status: "approved" });
+  return postApi<{ status: "approved"; alreadyReviewed: boolean }>("/api/admin/withdrawals/review", {
+    userId,
+    withdrawalId,
+    action: "approve",
+  });
 }
 
 export async function adminRejectWithdrawal(userId: string, withdrawalId: string) {
-  await updateDoc(doc(db, "users", userId, "withdrawals", withdrawalId), { status: "rejected" });
+  return postApi<{ status: "rejected"; alreadyReviewed: boolean }>("/api/admin/withdrawals/review", {
+    userId,
+    withdrawalId,
+    action: "reject",
+  });
 }
 
 export async function adminReplySupport(userId: string, supportId: string, reply: string) {

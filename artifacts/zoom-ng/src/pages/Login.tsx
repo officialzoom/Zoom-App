@@ -7,6 +7,7 @@ import { Zap, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { registerUser } from "@/lib/firebase-api";
 import { useToast } from "@/hooks/use-toast";
+import TelegramCta from "@/components/TelegramCta";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -116,6 +117,9 @@ export default function Login() {
           Don't have an account?{" "}
           <Link href="/signup" className="text-primary font-semibold hover:underline">Create one</Link>
         </p>
+        <div className="mt-4 flex justify-center">
+          <TelegramCta label="Get official updates" variant="ghost" className="text-gray-500 hover:text-primary" />
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +98,13 @@ export default function AddFundsButton({ variant = "default", size = "default", 
           <DialogTitle className="text-xl font-bold">Add Funds to Wallet</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="font-semibold">Please review before adding funds</p>
+            <p className="mt-1">
+              Five people must register using your referral code before your account can request a withdrawal.{" "}
+              <Link href="/terms" className="font-semibold underline">Review the terms</Link>.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label>Amount (₦)</Label>
             <Input

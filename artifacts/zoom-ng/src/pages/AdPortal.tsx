@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import NavBar from "@/components/NavBar";
-import { useGetAds, useGetDonationCampaigns, useSubmitAd, useMakeDonation, getGetAdsQueryKey, getGetDonationCampaignsQueryKey } from "@/lib/firebase-api";
+import { useGetAds, useGetDonationCampaigns, useSubmitAd, useMakeDonation, getGetAdsQueryKey, getGetDonationCampaignsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@/lib/firebase-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ export default function AdPortal() {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [isAdOpen, setIsAdOpen] = useState(false);
   const [isDonationOpen, setIsDonationOpen] = useState(false);
+  const donationRequest = useRef<{ signature: string; id: string } | null>(null);
 
   const adCost = adForm.duration === "1week" ? 50000 : adForm.duration === "1month" ? 180000 : 500000;
 
@@ -46,18 +47,31 @@ export default function AdPortal() {
   };
 
   const handleDonationSubmit = () => {
-    if (!selectedCampaign || !donationAmount || isNaN(Number(donationAmount))) return;
+    const amount = Number(donationAmount);
+    if (!selectedCampaign || !Number.isSafeInteger(amount) || amount < 1) {
+      toast({ title: "Invalid donation amount", description: "Enter a positive whole-naira amount.", variant: "destructive" });
+      return;
+    }
+    const signature = `${selectedCampaign}:${amount}`;
+    if (donationRequest.current?.signature !== signature) {
+      donationRequest.current = { signature, id: crypto.randomUUID() };
+    }
 
     makeDonation.mutate({
       campaignId: selectedCampaign,
-      data: { amount: Number(donationAmount) }
+      requestId: donationRequest.current.id,
+      data: { amount },
     }, {
       onSuccess: () => {
-        toast({ title: "Donation successful!", description: "Thank you for your generosity." });
+        toast({ title: "Donation successful!", description: "The amount was deducted from your wallet. Thank you for your generosity." });
         setIsDonationOpen(false);
         setDonationAmount("");
+        donationRequest.current = null;
         queryClient.invalidateQueries({ queryKey: getGetDonationCampaignsQueryKey() });
-      }
+        queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+      },
+      onError: (error) => toast({ title: "Donation failed", description: error.message, variant: "destructive" }),
     });
   };
 
@@ -184,7 +198,7 @@ export default function AdPortal() {
             <TabsContent value="donations">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-foreground">Support Causes</h2>
-                <p className="text-muted-foreground">Donate part of your returns to verified initiatives</p>
+                <p className="text-muted-foreground">Support a listed cause using your wallet balance</p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -229,6 +243,8 @@ export default function AdPortal() {
                                   onChange={e => setDonationAmount(e.target.value)} 
                                   className="h-16 text-center text-3xl font-bold rounded-2xl bg-gray-50 border-none"
                                   placeholder="0"
+                                  min={1}
+                                  step={1}
                                 />
                               </div>
                               <div className="grid grid-cols-3 gap-2">

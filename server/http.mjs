@@ -1,4 +1,4 @@
-import { getFirebaseAdminAuth } from "./firebase-admin.mjs";
+import { getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
 
 export class HttpError extends Error {
   constructor(status, message) {
@@ -56,8 +56,9 @@ export async function authenticate(request) {
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!match) throw new HttpError(401, "Sign in to continue.");
   const auth = getFirebaseAdminAuth();
+  let user;
   try {
-    return await auth.verifyIdToken(match[1]);
+    user = await auth.verifyIdToken(match[1]);
   } catch (error) {
     console.error("Firebase ID token verification failed:", {
       code: error?.code ?? "unknown",
@@ -74,10 +75,22 @@ export async function authenticate(request) {
     }
     throw new HttpError(401, "Your session has expired. Sign in and try again.");
   }
+  const isAdmin = user.email?.toLowerCase() === "officialzoom200@gmail.com";
+  if (!isAdmin) {
+    const database = getRealtimeDatabase();
+    const [profileBan, accountBan] = await Promise.all([
+      database.ref(`users/${user.uid}/banned`).get(),
+      database.ref(`banned/${user.uid}`).get(),
+    ]);
+    if (profileBan.val() === true || accountBan.val() === true) {
+      throw new HttpError(403, "This account has been suspended.");
+    }
+  }
+  return user;
 }
 
 export function requireAdmin(user) {
-  const allowedEmail = (process.env.ADMIN_EMAIL || "officialzoom200@gmail.com").toLowerCase();
+  const allowedEmail = "officialzoom200@gmail.com";
   if (!user?.email || user.email.toLowerCase() !== allowedEmail) {
     throw new HttpError(403, "Administrator access is required.");
   }

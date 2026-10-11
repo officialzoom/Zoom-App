@@ -2,6 +2,8 @@
 
 The active Zoom NG app uses Firebase Authentication and Firebase Realtime Database. Wallet funding, investment debits, withdrawals, registration, and donations are handled by Vercel serverless routes under `/api`. The browser never receives the SquadCo secret. No Firebase Cloud Function is required.
 
+The admin portal can credit a user's wallet through an authenticated Vercel API route. Each credit is checked against the configured admin account, applied atomically, and recorded in the user's transaction history with its reason and administrator identity. Do not edit wallet balances directly in the database.
+
 ## Vercel environment
 
 Configure these variables in the Vercel project:
@@ -21,7 +23,7 @@ Configure these variables in the Vercel project:
 
 `SQUADCO_API_BASE_URL` is optional. The API defaults to SquadCo production; a key beginning with `sandbox_` selects the documented sandbox host. The secret must be added separately to Vercel; Replit Secrets do not automatically populate Vercel.
 
-Set `ADMIN_EMAIL` only if the administrator email should differ from the existing `officialzoom200@gmail.com` account. `APP_BASE_URL` is optional and can override the payment return URL origin.
+The administrator email is fixed to `officialzoom200@gmail.com` to match the active frontend and `database.rules.json`. `APP_BASE_URL` is optional and can override the payment return URL origin.
 
 ## One-time Firestore copy
 

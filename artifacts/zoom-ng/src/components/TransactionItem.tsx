@@ -1,14 +1,17 @@
 import React from "react";
 import { Transaction } from "@/lib/firebase-api";
 import { formatCurrency, formatDate } from "@/lib/formatting";
-import { ArrowDownLeft, ArrowUpRight, Plus, Minus } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Heart, Plus, Minus } from "lucide-react";
 
 interface TransactionItemProps {
   transaction: Transaction;
 }
 
 export default function TransactionItem({ transaction }: TransactionItemProps) {
-  const isPositive = transaction.type === "return" || transaction.type === "deposit";
+  const isPositive = transaction.type === "return"
+    || transaction.type === "deposit"
+    || transaction.type === "admin_credit"
+    || transaction.type === "withdrawal_refund";
   
   const getIcon = () => {
     switch (transaction.type) {
@@ -16,6 +19,12 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
         return <ArrowDownLeft className="w-5 h-5 text-green-600" />;
       case "deposit":
         return <Plus className="w-5 h-5 text-blue-600" />;
+      case "admin_credit":
+        return <Plus className="w-5 h-5 text-green-600" />;
+      case "withdrawal_refund":
+        return <Plus className="w-5 h-5 text-green-600" />;
+      case "donation":
+        return <Heart className="w-5 h-5 text-pink-600" />;
       case "invest":
         return <Minus className="w-5 h-5 text-orange-600" />;
       case "withdrawal":
@@ -29,6 +38,9 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
     switch (transaction.type) {
       case "return": return "bg-green-100";
       case "deposit": return "bg-blue-100";
+      case "admin_credit": return "bg-green-100";
+      case "withdrawal_refund": return "bg-green-100";
+      case "donation": return "bg-pink-100";
       case "invest": return "bg-orange-100";
       case "withdrawal": return "bg-gray-100";
       default: return "bg-gray-100";
@@ -53,6 +65,7 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
               {transaction.status}
             </span>
           </div>
+          {transaction.description && <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>}
         </div>
       </div>
       <div className="text-right">

@@ -13,10 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
-// A single polished, real photograph represents each vehicle class so the
-// fleet grid stays light while every model is individually priced below.
+// A single illustrative image represents each vehicle class.
 const FLEET_HERO =
-  "https://media.base44.com/images/public/6abdad8b1f1e4a143ebf1cb7/a48a6aa1d_generated_f38c767c.png";
+  "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg/960px-2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg";
 
 interface Vehicle {
   name: string;
@@ -183,9 +182,13 @@ export default function ExploreAssets() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-10 text-center">
             <h1 className="text-4xl font-bold mb-3">Explore Fleets</h1>
-            <p className="text-lg text-muted-foreground">Browse real vehicles and invest in high-yield transport assets across Nigeria</p>
+            <p className="text-lg text-muted-foreground">Browse illustrative vehicle examples and review the available asset listings. Images may not represent available investment assets.</p>
             <div className="mt-6 mx-auto max-w-4xl rounded-3xl overflow-hidden shadow-sm border border-gray-100">
-              <img src={FLEET_HERO} alt="Zoom NG commercial fleet" className="w-full h-56 md:h-72 object-cover" loading="lazy" />
+              <img src={FLEET_HERO} alt="Illustrative photo of a 2011 Toyota Highlander" className="w-full h-56 md:h-72 object-cover" loading="lazy" />
+              <p className="px-4 py-2 text-left text-xs text-muted-foreground">
+                Illustrative photo by <a className="underline" href="https://commons.wikimedia.org/wiki/File:2011_Toyota_Highlander_(XU40)_IMG_9722.jpg" target="_blank" rel="noreferrer">Alexander-93</a> via Wikimedia Commons, licensed under{" "}
+                <a className="underline" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
+              </p>
             </div>
           </div>
 
@@ -260,7 +263,7 @@ export default function ExploreAssets() {
                         </div>
                       ))}
 
-                      <p className="text-sm font-semibold text-muted-foreground mb-3">Available vehicles in this fleet:</p>
+                      <p className="text-sm font-semibold text-muted-foreground mb-3">Illustrative vehicle examples (not confirmation of available assets):</p>
                       {vehicles.length === 0 ? (
                         <div className="text-center py-8 bg-white rounded-2xl border border-gray-100 text-muted-foreground">No vehicles match your search</div>
                       ) : (

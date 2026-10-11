@@ -1,4 +1,5 @@
-import { getRealtimeDatabase } from "./firebase-admin.mjs";
+import { createHash } from "node:crypto";
+import { getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError, requireNairaAmount, requireSafeId } from "./http.mjs";
 
 const MAX_INVESTMENT = 30_000;
@@ -51,8 +52,12 @@ export async function registerUser(user, input) {
   const savedProfile = result.snapshot.val() ?? defaults;
   const savedReferralCode = String(savedProfile.referredBy ?? "").trim().toUpperCase();
   if (savedReferralCode && savedReferralCode !== defaults.referralCode) {
-    const users = (await database.ref("users").get()).val() ?? {};
-    const referrerEntry = Object.entries(users).find(([, profile]) => profile?.referralCode === savedReferralCode);
+    const referrerSnapshot = await database.ref("users")
+      .orderByChild("referralCode")
+      .equalTo(savedReferralCode)
+      .limitToFirst(1)
+      .get();
+    const referrerEntry = Object.entries(referrerSnapshot.val() ?? {})[0];
     if (referrerEntry) {
       const [referrerUid] = referrerEntry;
       const referrerRef = database.ref(`users/${referrerUid}`);
@@ -67,6 +72,191 @@ export async function registerUser(user, input) {
     }
   }
   return { created: Boolean(result.committed && created) };
+}
+
+export async function creditUserWallet(admin, input) {
+  const uid = requireSafeId(input.userId, "User ID");
+  const requestId = requireSafeId(input.requestId, "Credit request ID");
+  const amount = requireNairaAmount(input.amount, 1);
+  const reason = typeof input.reason === "string" ? input.reason.trim() : "";
+  if (reason.length < 3 || reason.length > 500) {
+    throw new HttpError(400, "Enter a credit reason between 3 and 500 characters.");
+  }
+
+  const database = getRealtimeDatabase();
+  const userRef = database.ref(`users/${uid}`);
+  const transactionId = `admin-credit-${requestId}`;
+  const creditedAt = Date.now();
+  let outcome = "missing";
+  const result = await userRef.transaction((current) => {
+    if (!current) {
+      outcome = "missing";
+      return;
+    }
+
+    const existing = current.transactions?.[transactionId];
+    if (existing) {
+      outcome = existing.type === "admin_credit"
+        && Number(existing.amount) === amount
+        && existing.adminUid === admin.uid
+        && existing.reason === reason
+        ? "already-credited"
+        : "request-conflict";
+      return outcome === "already-credited" ? current : undefined;
+    }
+
+    const balance = Number(current.walletBalance ?? 0);
+    if (!Number.isSafeInteger(balance) || balance < 0 || !Number.isSafeInteger(balance + amount)) {
+      outcome = "invalid-balance";
+      return;
+    }
+
+    outcome = "credited";
+    return {
+      ...current,
+      walletBalance: balance + amount,
+      transactions: {
+        ...(current.transactions ?? {}),
+        [transactionId]: {
+          type: "admin_credit",
+          label: "Admin wallet credit",
+          amount,
+          date: creditedAt,
+          status: "completed",
+          reason,
+          adminUid: admin.uid,
+          adminEmail: admin.email,
+          requestId,
+        },
+      },
+    };
+  }, undefined, false);
+
+  if (outcome === "missing") throw new HttpError(404, "The selected user was not found.");
+  if (outcome === "request-conflict") {
+    throw new HttpError(409, "This credit request ID was already used for a different wallet credit.");
+  }
+  if (outcome === "invalid-balance") {
+    throw new HttpError(409, "The user's wallet balance cannot safely accept this credit.");
+  }
+  if (!result.committed && outcome !== "already-credited") {
+    throw new HttpError(409, "The wallet credit could not be applied.");
+  }
+
+  return {
+    credited: true,
+    alreadyCredited: outcome === "already-credited",
+    balance: Number(result.snapshot.val()?.walletBalance ?? 0),
+  };
+}
+
+export async function reviewWithdrawal(admin, input) {
+  const uid = requireSafeId(input.userId, "User ID");
+  const withdrawalId = requireSafeId(input.withdrawalId, "Withdrawal ID");
+  const action = input.action;
+  if (action !== "approve" && action !== "reject") {
+    throw new HttpError(400, "Withdrawal action must be approve or reject.");
+  }
+
+  const database = getRealtimeDatabase();
+  const userRef = database.ref(`users/${uid}`);
+  const fallbackRefundTransactionId = action === "reject"
+    ? recordId(database, `users/${uid}/transactions`)
+    : null;
+  const reviewedAt = Date.now();
+  let outcome = "missing";
+  const result = await userRef.transaction((current) => {
+    const withdrawal = current?.withdrawals?.[withdrawalId];
+    if (!withdrawal) {
+      outcome = "missing";
+      return;
+    }
+
+    if (withdrawal.status === (action === "approve" ? "approved" : "rejected")) {
+      outcome = "already-reviewed";
+      return current;
+    }
+    if (withdrawal.status !== "pending") {
+      outcome = "already-reviewed-differently";
+      return;
+    }
+
+    const amount = Number(withdrawal.amount);
+    if (!Number.isSafeInteger(amount) || amount < 1) {
+      outcome = "invalid-amount";
+      return;
+    }
+    const balance = Number(current.walletBalance ?? 0);
+    if (!Number.isSafeInteger(balance) || balance < 0 || (action === "reject" && !Number.isSafeInteger(balance + amount))) {
+      outcome = "invalid-balance";
+      return;
+    }
+
+    const next = {
+      ...current,
+      withdrawals: {
+        ...(current.withdrawals ?? {}),
+        [withdrawalId]: {
+          ...withdrawal,
+          status: action === "approve" ? "approved" : "rejected",
+          reviewedAt,
+          reviewedBy: admin.uid,
+          reviewedByEmail: admin.email,
+        },
+      },
+    };
+
+    const transactions = { ...(current.transactions ?? {}) };
+    if (withdrawal.transactionId && transactions[withdrawal.transactionId]) {
+      transactions[withdrawal.transactionId] = {
+        ...transactions[withdrawal.transactionId],
+        status: action === "approve" ? "completed" : "rejected",
+      };
+    } else if (action === "reject") {
+      transactions[fallbackRefundTransactionId] = {
+        type: "withdrawal_refund",
+        label: "Rejected withdrawal refund",
+        amount,
+        date: reviewedAt,
+        status: "completed",
+        withdrawalId,
+      };
+    }
+    next.transactions = transactions;
+    if (action === "reject") next.walletBalance = balance + amount;
+
+    outcome = "reviewed";
+    return next;
+  }, undefined, false);
+
+  if (outcome === "missing") throw new HttpError(404, "The withdrawal request was not found.");
+  if (outcome === "already-reviewed-differently") {
+    throw new HttpError(409, "This withdrawal request has already been reviewed.");
+  }
+  if (outcome === "invalid-amount") throw new HttpError(409, "The withdrawal request has an invalid amount.");
+  if (outcome === "invalid-balance") throw new HttpError(409, "The wallet balance cannot safely accept this withdrawal review.");
+  if (!result.committed && outcome !== "already-reviewed") {
+    throw new HttpError(409, "The withdrawal request could not be reviewed.");
+  }
+  return { status: action === "approve" ? "approved" : "rejected", alreadyReviewed: outcome === "already-reviewed" };
+}
+
+export async function deleteUserAccount(admin, input) {
+  const uid = requireSafeId(input.userId, "User ID");
+  if (uid === admin.uid) throw new HttpError(400, "You cannot delete the administrator account.");
+
+  try {
+    await getFirebaseAdminAuth().deleteUser(uid);
+  } catch (error) {
+    if (error?.code !== "auth/user-not-found") throw error;
+  }
+
+  const database = getRealtimeDatabase();
+  await Promise.all([
+    database.ref(`users/${uid}`).remove(),
+    database.ref(`banned/${uid}`).set(true),
+  ]);
+  return { deleted: true };
 }
 
 export async function createInvestment(uid, input) {
@@ -188,6 +378,7 @@ export async function createWithdrawal(uid, input) {
           status: "pending",
           createdAt: now,
           approvalDeadline: now + 12 * 60 * 60 * 1000,
+          transactionId,
         },
       },
       transactions: {
@@ -198,6 +389,7 @@ export async function createWithdrawal(uid, input) {
           amount,
           date: now,
           status: "pending",
+          withdrawalId,
         },
       },
     };
@@ -213,24 +405,149 @@ export async function createWithdrawal(uid, input) {
 
 export async function createDonation(uid, input) {
   const campaignId = requireSafeId(input.campaignId, "Campaign ID");
+  const requestId = requireSafeId(input.requestId, "Donation request ID");
   const amount = requireNairaAmount(input.amount, 1);
   const database = getRealtimeDatabase();
   const campaignRef = database.ref(`donationCampaigns/${campaignId}`);
-  const campaignSnapshot = await campaignRef.get();
-  if (!campaignSnapshot.exists()) throw new HttpError(404, "This donation campaign is not available.");
-
-  const donationRef = database.ref("donations").push();
-  if (!donationRef.key) throw new HttpError(500, "Could not create the donation record.");
-  const donation = { campaignId, userId: uid, amount, createdAt: Date.now(), status: "pending" };
-  await donationRef.set(donation);
-  const result = await campaignRef.transaction((campaign) => {
-    if (!campaign) return;
-    return { ...campaign, raisedAmount: Number(campaign.raisedAmount ?? 0) + amount };
+  const userRef = database.ref(`users/${uid}`);
+  const requestHash = createHash("sha256").update(`${uid}:${requestId}`).digest("hex");
+  const donationId = `don-${requestHash}`;
+  const transactionId = `donation-${requestHash}`;
+  const createdAt = Date.now();
+  let userOutcome = "missing";
+  const userResult = await userRef.transaction((current) => {
+    if (!current) {
+      userOutcome = "missing";
+      return;
+    }
+    const existing = current.donations?.[donationId];
+    if (existing) {
+      if (existing.campaignId !== campaignId || Number(existing.amount) !== amount) {
+        userOutcome = "request-conflict";
+        return;
+      }
+      if (existing.status === "completed") {
+        userOutcome = "already-completed";
+        return current;
+      }
+      if (existing.status !== "failed") {
+        userOutcome = "pending";
+        return current;
+      }
+    }
+    const balance = Number(current.walletBalance ?? 0);
+    if (!Number.isSafeInteger(balance) || balance < 0) {
+      userOutcome = "invalid-balance";
+      return;
+    }
+    if (amount > balance) {
+      userOutcome = "insufficient";
+      return;
+    }
+    userOutcome = "reserved";
+    return {
+      ...current,
+      walletBalance: balance - amount,
+      donations: {
+        ...(current.donations ?? {}),
+        [donationId]: { campaignId, amount, createdAt, status: "pending" },
+      },
+      transactions: {
+        ...(current.transactions ?? {}),
+        [transactionId]: {
+          type: "donation",
+          label: "Cause donation",
+          amount,
+          date: createdAt,
+          status: "pending",
+          campaignId,
+        },
+      },
+    };
   }, undefined, false);
-  if (!result.committed) {
-    await donationRef.update({ status: "failed" });
+
+  if (userOutcome === "missing") throw new HttpError(404, "Your account could not be found.");
+  if (userOutcome === "request-conflict") throw new HttpError(409, "This donation request ID was already used.");
+  if (userOutcome === "invalid-balance") throw new HttpError(409, "The wallet balance cannot safely be used for a donation.");
+  if (userOutcome === "insufficient") throw new HttpError(400, "Insufficient wallet balance for this donation.");
+  if (userOutcome === "already-completed") return { success: true, alreadyCompleted: true };
+  if (!userResult.committed && userOutcome !== "pending") {
+    throw new HttpError(409, "The donation could not be reserved from your wallet.");
+  }
+
+  const refundPendingDonation = async () => {
+    let refundOutcome = "pending";
+    const refundResult = await userRef.transaction((current) => {
+      const donation = current?.donations?.[donationId];
+      if (!donation || donation.status !== "pending") {
+        refundOutcome = donation?.status === "failed" ? "refunded" : "not-pending";
+        return current;
+      }
+      const balance = Number(current.walletBalance ?? 0);
+      if (!Number.isSafeInteger(balance + amount)) {
+        refundOutcome = "invalid-balance";
+        return;
+      }
+      refundOutcome = "refunded";
+      return {
+        ...current,
+        walletBalance: balance + amount,
+        donations: { ...(current.donations ?? {}), [donationId]: { ...donation, status: "failed" } },
+        transactions: {
+          ...(current.transactions ?? {}),
+          [transactionId]: { ...current.transactions?.[transactionId], status: "failed" },
+        },
+      };
+    }, undefined, false);
+    if (!refundResult.committed && refundOutcome !== "refunded") {
+      throw new HttpError(500, "The donation could not be completed or safely refunded.");
+    }
+  };
+
+  let campaignOutcome = "missing";
+  const campaignResult = await campaignRef.transaction((campaign) => {
+    if (!campaign) {
+      campaignOutcome = "missing";
+      return;
+    }
+    const existing = campaign.donationRefs?.[donationId];
+    if (existing) {
+      campaignOutcome = Number(existing.amount) === amount ? "already-counted" : "request-conflict";
+      return campaignOutcome === "already-counted" ? campaign : undefined;
+    }
+    const raisedAmount = Number(campaign.raisedAmount ?? 0);
+    if (!Number.isSafeInteger(raisedAmount) || raisedAmount < 0 || !Number.isSafeInteger(raisedAmount + amount)) {
+      campaignOutcome = "invalid-total";
+      return;
+    }
+    campaignOutcome = "counted";
+    return {
+      ...campaign,
+      raisedAmount: raisedAmount + amount,
+      donationRefs: { ...(campaign.donationRefs ?? {}), [donationId]: { amount } },
+    };
+  }, undefined, false);
+
+  if (campaignOutcome === "missing") {
+    await refundPendingDonation();
+    throw new HttpError(404, "This donation campaign is not available; the reserved wallet amount was refunded.");
+  }
+  if (campaignOutcome === "request-conflict") {
+    await refundPendingDonation();
+    throw new HttpError(409, "This donation request ID conflicts with another donation; the reserved wallet amount was refunded.");
+  }
+  if (campaignOutcome === "invalid-total") {
+    await refundPendingDonation();
+    throw new HttpError(409, "The campaign total cannot safely accept this donation; the reserved wallet amount was refunded.");
+  }
+  if (!campaignResult.committed && campaignOutcome !== "already-counted") {
     throw new HttpError(409, "The campaign changed before the donation could be recorded.");
   }
-  await donationRef.update({ status: "completed" });
+
+  await database.ref().update({
+    [`donations/${donationId}`]: { campaignId, userId: uid, amount, createdAt, status: "completed" },
+    [`users/${uid}/donations/${donationId}/status`]: "completed",
+    [`users/${uid}/transactions/${transactionId}/status`]: "completed",
+  });
   return { success: true };
 }

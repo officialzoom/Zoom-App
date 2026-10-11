@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import TelegramCta from "@/components/TelegramCta";
 
 export default function NavBar() {
   const [location] = useLocation();
@@ -45,6 +46,7 @@ export default function NavBar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <TelegramCta label="Updates" className="hidden md:inline-flex rounded-full" />
           <div className="hidden sm:flex bg-gray-50 border border-gray-100 rounded-full px-4 py-1.5 items-center gap-2">
             <span className="text-xs text-gray-500 font-medium">Balance</span>
             {isWalletLoading ? (
@@ -96,6 +98,11 @@ export default function NavBar() {
                     {link.label}
                   </Link>
                 ))}
+                <TelegramCta
+                  label="Follow official updates"
+                  variant="outline"
+                  className="mt-2 justify-start rounded-xl"
+                />
                 <button onClick={logout} className="px-4 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 mt-4">
                   <LogOut className="w-5 h-5" /> Sign Out
                 </button>
