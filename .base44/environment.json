@@ -1,7 +1,7 @@
 {
   "previewPort": 3000,
   "healthPath": "/",
-  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "startCommand": "pnpm dev",
   "secrets": [
     {
       "name": "VITE_FIREBASE_API_KEY",
