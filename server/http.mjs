@@ -55,9 +55,23 @@ export async function authenticate(request) {
   const authorization = request.headers.get("authorization") ?? "";
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!match) throw new HttpError(401, "Sign in to continue.");
+  const auth = getFirebaseAdminAuth();
   try {
-    return await getFirebaseAdminAuth().verifyIdToken(match[1]);
-  } catch {
+    return await auth.verifyIdToken(match[1]);
+  } catch (error) {
+    console.error("Firebase ID token verification failed:", {
+      code: error?.code ?? "unknown",
+      message: error?.message ?? "Unknown verification error",
+    });
+    if (/incorrect.*aud|audience|project id/i.test(error?.message ?? "")) {
+      throw new HttpError(
+        401,
+        "This sign-in session belongs to a different Firebase project. Confirm the Firebase project IDs match, then sign out and sign in again.",
+      );
+    }
+    if (error?.code === "auth/id-token-expired") {
+      throw new HttpError(401, "Your sign-in session expired. Refresh the page or sign in again.");
+    }
     throw new HttpError(401, "Your session has expired. Sign in and try again.");
   }
 }

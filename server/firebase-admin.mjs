@@ -20,6 +20,12 @@ export function getFirebaseAdminApp() {
   const clientEmail = requiredEnvironment("FIREBASE_CLIENT_EMAIL");
   const privateKey = requiredEnvironment("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
   const databaseURL = requiredEnvironment("FIREBASE_DATABASE_URL");
+  const webProjectId = process.env.VITE_FIREBASE_PROJECT_ID;
+  if (webProjectId && webProjectId !== projectId) {
+    const error = new Error("VITE_FIREBASE_PROJECT_ID and FIREBASE_PROJECT_ID must match.");
+    error.status = 503;
+    throw error;
+  }
 
   return initializeApp(
     {

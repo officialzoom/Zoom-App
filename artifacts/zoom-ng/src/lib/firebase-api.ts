@@ -238,7 +238,7 @@ function getUid(): string {
 async function postApi<T>(path: string, body: unknown): Promise<T> {
   const user = auth?.currentUser;
   if (!user) throw new Error("Not authenticated");
-  const token = await user.getIdToken();
+  let token = await user.getIdToken();
   const basePath = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
   const response = await fetch(`${basePath}${path.replace(/^\/+/, "")}`, {
     method: "POST",
@@ -248,19 +248,31 @@ async function postApi<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   });
-  const responseBody = await response.text();
+  let apiResponse = response;
+  if (apiResponse.status === 401) {
+    token = await user.getIdToken(true);
+    apiResponse = await fetch(`${basePath}${path.replace(/^\/+/, "")}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+  const responseBody = await apiResponse.text();
   let payload: { error?: string; message?: string } = {};
   try {
     payload = JSON.parse(responseBody);
   } catch {
     // Vercel platform errors may be plain text instead of the API's JSON response.
   }
-  if (!response.ok) {
+  if (!apiResponse.ok) {
     throw new Error(
       payload.error
       || payload.message
       || responseBody.trim()
-      || `The secure server request failed (HTTP ${response.status}).`,
+      || `The secure server request failed (HTTP ${apiResponse.status}).`,
     );
   }
   return JSON.parse(responseBody) as T;
