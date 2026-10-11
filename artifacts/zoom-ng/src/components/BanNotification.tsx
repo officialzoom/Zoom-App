@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { onValue, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, Mail } from "lucide-react";
@@ -13,19 +13,11 @@ export default function BanNotification() {
   useEffect(() => {
     if (!user) return;
 
-    const unsub = onSnapshot(
-      doc(db, "users", user.uid),
-      (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.banned) {
-            setBanned(true);
-            setBannedReason(data.bannedReason || "Violation of terms of service");
-          }
-        }
-      },
-      () => {}
-    );
+    const unsub = onValue(ref(db, `users/${user.uid}`), (snapshot) => {
+      const data = snapshot.val();
+      setBanned(Boolean(data?.banned));
+      setBannedReason(data?.bannedReason || "Violation of terms of service");
+    }, () => {});
 
     return unsub;
   }, [user]);

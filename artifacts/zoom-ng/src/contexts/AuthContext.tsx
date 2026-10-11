@@ -15,7 +15,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, displayName: string) => Promise<User>;
   loginWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
@@ -54,8 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return auth;
   };
 
-  const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(requireAuth(), email, password);
+  const login = async (email: string, password: string): Promise<User> => {
+    const credential = await signInWithEmailAndPassword(requireAuth(), email, password);
+    return credential.user;
   };
 
   const signup = async (email: string, password: string, displayName: string): Promise<User> => {

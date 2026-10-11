@@ -21,7 +21,8 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      const user = await login(email, password);
+      await registerUser(user.uid, user.displayName || "User", user.email || email);
       setLocation("/dashboard");
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message || "Invalid credentials", variant: "destructive" });

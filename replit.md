@@ -1,72 +1,44 @@
 # Zoom NG
 
-Nigerian vehicle investment platform — users invest in verified transport fleets (cars, buses, trucks) and earn passive income.
+Nigerian vehicle-investment platform for exploring transport fleets, managing a wallet, and tracking investments.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only, requires TTY — use direct psql for CI)
-- Required env: `DATABASE_URL`, `VITE_FIREBASE_*`
+- `pnpm install` — install workspace dependencies.
+- `pnpm dev` — run the Zoom NG Vite frontend.
+- `pnpm run build` — typecheck workspace code and build only the active Zoom NG frontend.
+- `pnpm --filter @workspace/zoom-ng run typecheck` — focused frontend typecheck.
+- Frontend Firebase configuration uses `VITE_FIREBASE_*`, including `VITE_FIREBASE_DATABASE_URL`.
+- Vercel API routes require `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_DATABASE_URL`, and `SQUADCO_SECRET_KEY`.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- Frontend: React + Vite + shadcn/ui + Tailwind v4 (`artifacts/zoom-ng`)
-- API: Express 5 (`artifacts/api-server`)
-- DB: PostgreSQL + Drizzle ORM
-- Auth: Firebase Auth (frontend) + firebase-admin (backend JWT verification)
-- API codegen: Orval (from OpenAPI spec in `lib/api-spec/`)
+- pnpm 10 workspace, Node.js 24, TypeScript 5.9.
+- Frontend: React, Vite, Tailwind, Firebase Auth, and Firebase Realtime Database.
+- Vercel API routes in `/api` use Firebase Admin and SquadCo; no Firebase Cloud Function is needed.
+- The current Replit/Vercel frontend is `artifacts/zoom-ng`; `zoom-ng/` is an older duplicate.
 
 ## Where things live
 
-- `lib/db/src/schema/` — source of truth for DB schema
-- `lib/api-spec/openapi.yaml` — source of truth for API contract
-- `lib/api-client-react/src/generated/` — generated React Query hooks (do not edit)
-- `artifacts/zoom-ng/src/` — React frontend
-- `artifacts/api-server/src/routes/` — Express API routes
-- `artifacts/zoom-ng/src/contexts/AuthContext.tsx` — Firebase auth context
-- `artifacts/zoom-ng/src/lib/firebase.ts` — Firebase SDK init
-- `artifacts/zoom-ng/src/pages/Admin.tsx` — Admin panel (officialzoom200@gmail.com only)
+- `artifacts/zoom-ng/src/` — active frontend.
+- `artifacts/zoom-ng/src/components/AddFundsButton.tsx` — wallet funding and payment-return UI.
+- `artifacts/zoom-ng/src/lib/firebase-api.ts` — active data access and secure API calls.
+- `api/` and `server/` — Vercel serverless endpoints and shared server-side services.
+- `scripts/migrate-firestore-to-rtdb.mjs` — explicit dry-run-first, non-destructive data copy.
+- `database.rules.json` — Realtime Database access rules.
+- `zoom-ng/` — inactive duplicate; do not treat it as the production frontend.
 
-## Architecture decisions
+## Payment and data rules
 
-- Firebase Auth is used for login (email + Google) — backend verifies JWT via firebase-admin
-- Users are stored in Postgres with `firebase_uid` as the link to Firebase identity
-- Withdrawals require 5 referrals (enforced server-side in wallet route)
-- Ban notifications use Firestore real-time listener on `users/{uid}` doc
-- Admin email is hardcoded as `officialzoom200@gmail.com` in both frontend and backend
-- `drizzle-kit push` requires TTY — use raw `psql` commands for non-interactive migrations
+- Wallet checkout initiation, verification, and webhook processing are server-side Vercel routes.
+- Keep the SquadCo secret server-side; never put it in frontend code or `VITE_*` variables.
+- Only a transaction verified through the SquadCo API is credited to a wallet.
+- Financial writes use Firebase Admin on the server; Realtime Database rules deny client writes to protected balances and transactions.
+- Firestore is retained only as the source for the explicit migration copy. Do not add Firestore imports to the active browser data layer.
+- Review and deploy `database.rules.json` to Firebase separately from deploying the Vercel app.
 
-## Product
+## Project conventions
 
-- **Landing page** — public marketing page with Terms & Privacy, CTA to sign up
-- **Firebase Auth** — email/password + Google sign-in, signup with referral code
-- **Dashboard** — wallet balance, active investments, earnings overview
-- **Explore Fleets** — browse cars, buses, trucks with real Unsplash vehicle images
-- **Invest** — pick asset tier, invest amount, earn returns over lock period
-- **Profile** — bank accounts, withdrawal request (unlocked after 5 referrals), referral link
-- **Referral Program** — unique code per user, referrer earns 5 referrals to unlock withdrawal
-- **Admin Panel** — ban/unban/delete users, approve/reject withdrawals, reply to support
-- **Support** — users can message admin; admin replies trigger in-app notifications
-- **Ban Notifications** — real-time Firestore listener shows modal if user is banned
-
-## User preferences
-
-- Admin email: officialzoom200@gmail.com
-- Nigerian naira (₦) currency throughout
-- Real car/bus/truck images from Unsplash
-
-## Gotchas
-
-- `drizzle-kit push` fails non-interactively if existing data conflicts — use psql directly
-- Firebase admin uses `applicationDefault()` — requires `GOOGLE_APPLICATION_CREDENTIALS` env var in production
-- Vite HMR needs both workflows running; restart zoom-ng after adding new npm deps
-- After schema changes, always run `pnpm --filter @workspace/api-spec run codegen` to regenerate hooks
-- DB tables `notifications`, `withdrawal_requests`, `support_messages` were added via direct psql (not drizzle push)
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Keep setup and payment debugging lightweight unless the user expands the scope.
+- Admin email: `officialzoom200@gmail.com`.
+- Currency: Nigerian naira (₦).

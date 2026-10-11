@@ -1,13 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const databaseURL = import.meta.env.VITE_FIREBASE_DATABASE_URL;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${projectId}.firebaseapp.com`,
   projectId,
+  databaseURL,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
@@ -32,5 +34,5 @@ try {
   console.error("[v0] Firebase Auth could not initialize", error);
 }
 
-export const db = getFirestore(app);
+export const db = databaseURL ? getDatabase(app, databaseURL) : getDatabase(app);
 export const googleProvider = new GoogleAuthProvider();
