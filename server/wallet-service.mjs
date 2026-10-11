@@ -132,7 +132,12 @@ export async function creditUserWallet(admin, input) {
     };
   }, undefined, false);
 
-  if (outcome === "missing") throw new HttpError(404, "The selected user was not found.");
+  if (outcome === "missing") {
+    throw new HttpError(
+      404,
+      "That user's profile was not found in the Realtime Database connected to the admin API. Refresh the user list; if the user still appears, verify FIREBASE_DATABASE_URL matches the frontend Firebase database URL in Vercel.",
+    );
+  }
   if (outcome === "request-conflict") {
     throw new HttpError(409, "This credit request ID was already used for a different wallet credit.");
   }
