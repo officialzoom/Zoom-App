@@ -47,8 +47,8 @@ export default function AssetTierCard({ asset }: AssetTierCardProps) {
         queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
       },
-      onError: () => {
-        toast({ title: "Investment Failed", description: "Please check your balance and try again.", variant: "destructive" });
+      onError: (error) => {
+        toast({ title: "Investment Failed", description: error.message || "Please check your balance and try again.", variant: "destructive" });
       }
     });
   };

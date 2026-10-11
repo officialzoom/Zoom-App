@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
+import { getFirebaseAdminApp, getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError, requireNairaAmount, requireSafeId } from "./http.mjs";
 
 const MAX_INVESTMENT = 30_000;
@@ -18,10 +18,10 @@ function recordId(database, path) {
   return key;
 }
 
-function logUserProfileContext(operation, database, uid, details = {}) {
+function logUserProfileContext(operation, uid, details = {}) {
   const uidFingerprint = createHash("sha256").update(uid).digest("hex").slice(0, 12);
   const databaseFingerprint = createHash("sha256")
-    .update(database.ref().toString())
+    .update(getFirebaseAdminApp().options.databaseURL ?? "")
     .digest("hex")
     .slice(0, 12);
   console.warn("Firebase user profile diagnostic:", {
@@ -63,7 +63,7 @@ export async function registerUser(user, input) {
     created = true;
     return defaults;
   }, undefined, false);
-  logUserProfileContext("register", database, uid, {
+  logUserProfileContext("register", uid, {
     created: Boolean(result.committed && created),
     profileExists: Boolean(result.snapshot.val()),
   });
@@ -151,11 +151,12 @@ export async function creditUserWallet(admin, input) {
   }, undefined, false);
 
   if (outcome === "missing") {
-    logUserProfileContext("admin-credit-missing", database, uid);
-    throw new HttpError(
-      404,
-      "That user's profile was not found in the Realtime Database connected to the admin API. Refresh the user list; if the user still appears, verify FIREBASE_DATABASE_URL matches the frontend Firebase database URL in Vercel.",
-    );
+    const current = await userRef.get();
+    if (!current.exists()) {
+      logUserProfileContext("admin-credit-missing", uid);
+      throw new HttpError(404, "The selected user profile no longer exists. Refresh the Admin user list and try again.");
+    }
+    throw new HttpError(409, "The user's wallet changed during this request. Refresh the Admin page and try again.");
   }
   if (outcome === "request-conflict") {
     throw new HttpError(409, "This credit request ID was already used for a different wallet credit.");
@@ -283,6 +284,29 @@ export async function deleteUserAccount(admin, input) {
   return { deleted: true };
 }
 
+export async function listAdminUsers() {
+  const snapshot = await getRealtimeDatabase().ref("users").get();
+  const records = snapshot.val();
+  if (!records || typeof records !== "object" || Array.isArray(records)) return [];
+
+  return Object.entries(records).map(([id, data]) => {
+    const profile = data && typeof data === "object" ? data : {};
+    const displayName = profile.displayName || "User";
+    return {
+      id,
+      displayName,
+      email: profile.email ?? "",
+      banned: Boolean(profile.banned),
+      kycVerified: Boolean(profile.kycVerified),
+      referralCount: Number(profile.referralCount ?? 0),
+      investorLevel: profile.investorLevel ?? "Bronze",
+      memberSince: profile.memberSince ?? "—",
+      avatarInitials: displayName.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase(),
+      wallet: { balance: Number(profile.walletBalance ?? 0) },
+    };
+  });
+}
+
 export async function createInvestment(uid, input) {
   const assetId = requireSafeId(input.assetId, "Asset ID");
   const tier = ASSETS[assetId];
@@ -311,6 +335,10 @@ export async function createInvestment(uid, input) {
       return;
     }
     const balance = Number(current.walletBalance ?? 0);
+    if (!Number.isSafeInteger(balance) || balance < 0) {
+      outcome = "invalid-balance";
+      return;
+    }
     if (amount > balance) {
       outcome = "insufficient";
       return;
@@ -349,8 +377,20 @@ export async function createInvestment(uid, input) {
 
   if (!result.committed) {
     if (outcome === "insufficient") throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
-    logUserProfileContext("investment-missing", database, uid);
-    throw new HttpError(404, "Your account could not be found.");
+    if (outcome === "invalid-balance") {
+      throw new HttpError(409, "Your wallet balance needs review before you can invest. Contact support.");
+    }
+    const current = await userRef.get();
+    if (current.exists()) {
+      const balance = Number(current.val()?.walletBalance ?? 0);
+      if (!Number.isSafeInteger(balance) || balance < 0) {
+        throw new HttpError(409, "Your wallet balance needs review before you can invest. Contact support.");
+      }
+      if (amount > balance) throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
+      throw new HttpError(409, "Your wallet changed during this request. Refresh the page and try again.");
+    }
+    logUserProfileContext("investment-missing", uid);
+    throw new HttpError(404, "Your account profile is missing. Sign out and sign in again to restore it, then retry.");
   }
   return {
     id: investmentId,

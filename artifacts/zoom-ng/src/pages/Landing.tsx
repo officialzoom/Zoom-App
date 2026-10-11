@@ -5,7 +5,7 @@ import { Zap, TrendingUp, Shield, Users, Car, Truck, ChevronRight, Star, Wallet 
 import TelegramCta from "@/components/TelegramCta";
 
 const FLEET_IMAGE =
-  "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg/960px-2011_Toyota_Highlander_%28XU40%29_IMG_9722.jpg";
+  "https://media.base44.com/images/public/6abdad8b1f1e4a143ebf1cb7/a48a6aa1d_generated_f38c767c.png";
 
 export default function Landing() {
   return (
@@ -73,7 +73,7 @@ export default function Landing() {
           <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
             <img
               src={FLEET_IMAGE}
-              alt="2011 Toyota Highlander"
+              alt="Zoom NG transport fleet"
               className="h-56 w-full object-cover md:h-80"
               loading="lazy"
             />
@@ -81,10 +81,6 @@ export default function Landing() {
               <h2 className="text-2xl font-bold">Explore transport asset examples</h2>
               <p className="mt-2 text-sm text-gray-500">
                 Discover vehicle categories and explore the transport opportunities available on Zoom NG.
-              </p>
-              <p className="mt-3 text-xs text-gray-500">
-                Photo by <a className="underline" href="https://commons.wikimedia.org/wiki/File:2011_Toyota_Highlander_(XU40)_IMG_9722.jpg" target="_blank" rel="noreferrer">Alexander-93</a> via Wikimedia Commons, licensed under{" "}
-                <a className="underline" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
               </p>
             </div>
           </div>

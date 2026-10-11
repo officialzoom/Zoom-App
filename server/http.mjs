@@ -58,7 +58,7 @@ export async function authenticate(request) {
   const auth = getFirebaseAdminAuth();
   let user;
   try {
-    user = await auth.verifyIdToken(match[1]);
+    user = await auth.verifyIdToken(match[1], true);
   } catch (error) {
     console.error("Firebase ID token verification failed:", {
       code: error?.code ?? "unknown",

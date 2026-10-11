@@ -709,25 +709,7 @@ export async function getAdminStats() {
 }
 
 export async function getAdminUsers() {
-  const usersSnap = await getDocs(collection(db, "users"));
-  const users: any[] = [];
-  for (const docSnap of usersSnap.docs) {
-    const data = docSnap.data();
-    const displayName = data.displayName || "User";
-    users.push({
-      id: docSnap.id,
-      displayName,
-      email: data.email ?? "",
-      banned: Boolean(data.banned),
-      kycVerified: Boolean(data.kycVerified),
-      referralCount: Number(data.referralCount ?? 0),
-      investorLevel: data.investorLevel ?? "Bronze",
-      memberSince: data.memberSince ?? "—",
-      avatarInitials: displayName.split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
-      wallet: { balance: Number(data.walletBalance ?? 0) },
-    });
-  }
-  return users;
+  return postApi<any[]>("/api/admin/users/list", {});
 }
 
 export async function getAdminWithdrawals() {
