@@ -9,6 +9,7 @@ The root `zoom-ng` directory is a separate, older frontend. Make frontend change
 ## Vercel Setup
 
 Set the Vercel project's Root Directory to the repository root so that the root `vercel.json` is used. It publishes `artifacts/zoom-ng/dist/public` and routes non-API paths to the app.
+The root `package.json` pins Vercel Functions to Node.js 24, required by the Firebase Admin authentication dependency chain.
 
 Set these browser Firebase configuration variables in Vercel Project Settings > Environment Variables for each environment you deploy:
 - `VITE_FIREBASE_API_KEY`
