@@ -1,6 +1,7 @@
 /**
- * Firebase Firestore data layer — replaces the Express API client.
- * All data operations go directly to Firestore, keyed by the current user's UID.
+ * Firebase Realtime Database data layer and authenticated Vercel API calls.
+ * Client-readable data is keyed by the current user's UID; protected wallet
+ * mutations are performed by the Admin SDK on the server.
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -8,18 +9,12 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
   deleteDoc,
   addDoc,
   query,
   orderBy,
-  onSnapshot,
-  serverTimestamp,
-  arrayUnion,
-  increment,
-  Timestamp,
-} from "firebase/firestore";
+} from "./rtdb-compat";
 import { db, auth } from "./firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -238,6 +233,26 @@ function getUid(): string {
   const uid = auth?.currentUser?.uid;
   if (!uid) throw new Error("Not authenticated");
   return uid;
+}
+
+async function postApi<T>(path: string, body: unknown): Promise<T> {
+  const user = auth?.currentUser;
+  if (!user) throw new Error("Not authenticated");
+  const token = await user.getIdToken();
+  const basePath = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+  const response = await fetch(`${basePath}${path.replace(/^\/+/, "")}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || payload.message || "The secure server request failed.");
+  }
+  return payload as T;
 }
 
 function userDoc(uid: string) {
@@ -472,7 +487,6 @@ export function useCreateInvestment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { data: { assetId: string; amount: number; lockDays: number } }) => {
-      const uid = getUid();
       const { assetId, amount, lockDays } = input.data;
       const tier = ASSET_TIER_MAP[assetId];
       if (!tier) throw new Error("Invalid asset selected");
@@ -481,55 +495,8 @@ export function useCreateInvestment() {
       }
       if (amount < tier.entryAmount) throw new Error(`Minimum investment for this asset is ₦${tier.entryAmount.toLocaleString("en-NG")}`);
       if (amount > MAX_INVESTMENT) throw new Error(`Maximum investment is ₦${MAX_INVESTMENT.toLocaleString("en-NG")}`);
-
-      // Check wallet balance
-      const userSnap = await getDoc(userDoc(uid));
-      const balance = Number(userSnap.data()?.walletBalance ?? 0);
-      if (amount > balance) throw new Error("Insufficient wallet balance. Please add funds first.");
-
-      const prorate = Math.min(lockDays / tier.durationDays, 1);
-      const expectedPayout = Math.round(amount * (1 + (tier.returnRate / 100) * prorate));
-      const now = Date.now();
-      const startDate = new Date(now).toISOString();
-      const endDate = new Date(now + lockDays * 24 * 60 * 60 * 1000).toISOString();
-
-      // Deduct from wallet
-      await updateDoc(userDoc(uid), { walletBalance: increment(-amount) });
-
-      // Create investment record
-      const invRef = await addDoc(userCollection(uid, "investments"), {
-        assetId,
-        assetLabel: tier.label,
-        amount,
-        expectedPayout,
-        returnRate: tier.returnRate,
-        status: "active",
-        startDate,
-        endDate,
-        lockDays,
-        createdAt: now,
-      });
-
-      // Log transaction
-      await addDoc(userCollection(uid, "transactions"), {
-        type: "invest",
-        label: `Investment in ${tier.label}`,
-        amount,
-        date: now,
-        status: "active",
-      });
-
-      return {
-        id: invRef.id,
-        assetId,
-        assetLabel: tier.label,
-        amount,
-        expectedPayout,
-        returnRate: tier.returnRate,
-        status: "active" as const,
-        startDate,
-        endDate,
-      };
+      const result = await postApi<{ investment: Investment }>("/api/wallet/invest", { assetId, amount, lockDays });
+      return result.investment;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getGetInvestmentsQueryKey() });
@@ -546,43 +513,8 @@ export function useWithdrawFromWallet() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { data: { amount: number; bankId: string } }) => {
-      const uid = getUid();
       const { amount, bankId } = input.data;
-      if (amount < 100) throw new Error("Minimum withdrawal is ₦100");
-
-      const userSnap = await getDoc(userDoc(uid));
-      const userData = userSnap.data() ?? {};
-      const balance = Number(userData.walletBalance ?? 0);
-      if (amount > balance) throw new Error("Insufficient balance");
-
-      const referralCount = Number(userData.referralCount ?? 0);
-      if (referralCount < 5) throw new Error("You need at least 5 referrals to withdraw");
-
-      const now = Date.now();
-      const approvalDeadline = now + 12 * 60 * 60 * 1000;
-
-      // Create withdrawal request
-      await addDoc(userCollection(uid, "withdrawals"), {
-        amount,
-        bankId,
-        status: "pending",
-        createdAt: now,
-        approvalDeadline,
-      });
-
-      // Deduct from balance
-      await updateDoc(userDoc(uid), { walletBalance: increment(-amount) });
-
-      // Log transaction
-      await addDoc(userCollection(uid, "transactions"), {
-        type: "withdrawal",
-        label: "Withdrawal Request",
-        amount,
-        date: now,
-        status: "pending",
-      });
-
-      return { message: "Withdrawal request submitted. Admin has 12 hours to approve." };
+      return postApi<{ message: string }>("/api/wallet/withdraw", { amount, bankId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
@@ -592,7 +524,7 @@ export function useWithdrawFromWallet() {
 }
 
 // ---------------------------------------------------------------------------
-// Hooks — Ads (Firestore collection)
+// Hooks — Ads (Realtime Database user records)
 // ---------------------------------------------------------------------------
 export function useGetAds() {
   return useQuery({
@@ -636,7 +568,7 @@ export function useSubmitAd() {
 }
 
 // ---------------------------------------------------------------------------
-// Hooks — Donation Campaigns (Firestore public collection)
+// Hooks — Donation Campaigns (public Realtime Database records)
 // ---------------------------------------------------------------------------
 export function useGetDonationCampaigns() {
   return useQuery({
@@ -664,57 +596,23 @@ export function useMakeDonation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { campaignId: string; data: { amount: number } }) => {
-      const uid = getUid();
-      const { campaignId, data } = input;
-      const campaignRef = doc(db, "donationCampaigns", campaignId);
-      await updateDoc(campaignRef, { raisedAmount: increment(data.amount) });
-      await addDoc(collection(db, "donations"), {
-        campaignId,
-        userId: uid,
-        amount: data.amount,
-        createdAt: Date.now(),
+      getUid();
+      return postApi<{ success: boolean }>("/api/donations/create", {
+        campaignId: input.campaignId,
+        amount: input.data.amount,
       });
-      return { success: true };
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetDonationCampaignsQueryKey() }),
   });
 }
 
 // ---------------------------------------------------------------------------
-// User registration — creates user document in Firestore
+// User registration — the Vercel API initializes protected wallet fields and
+// referral counts using the authenticated Firebase identity.
 // ---------------------------------------------------------------------------
 export async function registerUser(uid: string, displayName: string, email: string, referralCode?: string) {
-  const userRef = userDoc(uid);
-  const existing = await getDoc(userRef);
-  if (existing.exists()) return; // Already registered
-
-  const newReferralCode = uid.slice(0, 8).toUpperCase();
-  const userData: Record<string, unknown> = {
-    displayName,
-    email,
-    walletBalance: 0,
-    kycVerified: false,
-    memberSince: new Date().toISOString().slice(0, 10),
-    investorLevel: "Bronze",
-    referralCount: 0,
-    referralCode: newReferralCode,
-    banned: false,
-    createdAt: Date.now(),
-  };
-
-  // Handle referral — increment referrer's count
-  if (referralCode) {
-    const usersSnap = await getDocs(collection(db, "users"));
-    for (const docSnap of usersSnap.docs) {
-      const data = docSnap.data();
-      if (data.referralCode === referralCode) {
-        await updateDoc(doc(db, "users", docSnap.id), { referralCount: increment(1) });
-        break;
-      }
-    }
-  }
-
-  await setDoc(userRef, userData, { merge: true });
+  if (getUid() !== uid) throw new Error("Authenticated user does not match registration request.");
+  await postApi("/api/users/register", { displayName, email, referralCode });
 }
 
 // ---------------------------------------------------------------------------
@@ -729,28 +627,17 @@ export async function sendSupportMessage(uid: string, message: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Wallet funding — creates a pending payment record.
-// NOTE: The actual SquadCo checkout requires a server-side secret key.
-// To complete this flow, deploy a Firebase Cloud Function that calls the
-// SquadCo API and returns the checkout URL. For now this records the intent.
+// Wallet funding — payment initiation and verification run on Vercel so the
+// SquadCo secret key never reaches the browser.
 // ---------------------------------------------------------------------------
 export async function initiateWalletFund(uid: string, amount: number): Promise<{ checkoutUrl: string; transactionRef: string }> {
-  const transactionRef = `ZMNG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  await addDoc(userCollection(uid, "payments"), {
-    amount,
-    status: "pending",
-    type: "wallet_fund",
-    transactionRef,
-    createdAt: Date.now(),
-  });
-  // Return a placeholder — replace with real SquadCo checkout URL from Cloud Functions
-  return { checkoutUrl: "", transactionRef };
+  if (getUid() !== uid) throw new Error("Authenticated user does not match payment request.");
+  return postApi("/api/payments/initiate", { amount });
 }
 
-export async function verifyWalletFund(uid: string, _transactionRef: string): Promise<{ verified: boolean; amount: number }> {
-  // Payment verification requires the SquadCo secret key (server-side).
-  // Deploy a Firebase Cloud Function to handle verification and credit the wallet.
-  return { verified: false, amount: 0 };
+export async function verifyWalletFund(uid: string, transactionRef: string): Promise<{ verified: boolean; amount: number; alreadyCredited?: boolean }> {
+  if (getUid() !== uid) throw new Error("Authenticated user does not match payment request.");
+  return postApi("/api/payments/verify", { transactionRef });
 }
 
 // ---------------------------------------------------------------------------

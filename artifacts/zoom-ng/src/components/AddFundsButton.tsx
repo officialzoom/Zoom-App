@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetWalletQueryKey, getGetDashboardSummaryQueryKey, initiateWalletFund, verifyWalletFund } from "@/lib/firebase-api";
 import { formatCurrency } from "@/lib/formatting";
@@ -25,26 +25,23 @@ export default function AddFundsButton({ variant = "default", size = "default", 
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, loading: authLoading } = useAuth();
+  const handledReference = useRef<string | null>(null);
 
   const handleFund = async () => {
     const numAmount = Number(amount);
-    if (!numAmount || numAmount < 100) {
+    if (!Number.isSafeInteger(numAmount) || numAmount < 100) {
       toast({ title: "Invalid amount", description: "Minimum is ₦100", variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
-      const user = auth?.currentUser;
       if (!user) {
         toast({ title: "Please log in first", variant: "destructive" });
         return;
       }
       const { checkoutUrl } = await initiateWalletFund(user.uid, numAmount);
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        toast({ title: "Payment setup recorded", description: "SquadCo checkout requires a Cloud Function. Add the SquadCo secret key and deploy a Cloud Function to enable live payments." });
-      }
+      window.location.assign(checkoutUrl);
     } catch (err: any) {
       toast({ title: "Payment failed", description: err.message, variant: "destructive" });
     } finally {
@@ -52,29 +49,41 @@ export default function AddFundsButton({ variant = "default", size = "default", 
     }
   };
 
-  // Check for payment callback on mount
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fundRef = params.get("fund");
-    if (fundRef) {
-      (async () => {
-        const user = auth?.currentUser;
-        if (!user) return;
-        try {
-          const result = await verifyWalletFund(user.uid, fundRef);
-          if (result.verified) {
-            toast({ title: "Payment Successful", description: `${formatCurrency(result.amount)} added to your wallet` });
-            queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          }
-        } catch {
-          // ignore verification errors
+  useEffect(() => {
+    const fundRef = new URLSearchParams(window.location.search).get("fund");
+    if (!fundRef || authLoading || !user || handledReference.current === fundRef) return;
+    handledReference.current = fundRef;
+
+    let cancelled = false;
+    void verifyWalletFund(user.uid, fundRef)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.verified) {
+          toast({ title: "Payment successful", description: `${formatCurrency(result.amount)} added to your wallet` });
+          void queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
+          void queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        } else {
+          toast({
+            title: "Payment is still being confirmed",
+            description: "Your wallet will only be credited after SquadCo confirms the transaction.",
+          });
         }
-        // Clean URL
-        window.history.replaceState({}, "", window.location.pathname);
-      })();
-    }
-  }, []);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("fund");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        toast({
+          title: "Could not confirm payment yet",
+          description: error instanceof Error ? error.message : "Please reload this page to retry verification.",
+          variant: "destructive",
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, toast, queryClient]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -97,6 +106,7 @@ export default function AddFundsButton({ variant = "default", size = "default", 
               placeholder="Enter amount"
               className="h-14 rounded-xl text-lg font-bold bg-gray-50 border-gray-200"
               min={100}
+              step={1}
             />
             <p className="text-xs text-muted-foreground">Minimum: ₦100</p>
           </div>
@@ -118,10 +128,10 @@ export default function AddFundsButton({ variant = "default", size = "default", 
             disabled={loading}
             className="w-full h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/20"
           >
-            {loading ? "Saving request..." : `Request ${amount ? formatCurrency(Number(amount)) : "Funds"}`}
+            {loading ? "Connecting to SquadCo..." : `Continue to payment${amount ? ` · ${formatCurrency(Number(amount))}` : ""}`}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            SquadCo checkout is not configured yet. No payment will be charged and funds will not be added.
+            Your wallet is credited only after the server verifies the completed SquadCo payment.
           </p>
         </div>
       </DialogContent>

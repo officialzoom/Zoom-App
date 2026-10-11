@@ -1,0 +1,67 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth != null && auth.token.email === 'officialzoom200@gmail.com'",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+        ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'",
+        "banks": {
+          "$bankId": {
+            ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+            ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')"
+          }
+        },
+        "ads": {
+          "$adId": {
+            ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+            ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')"
+          }
+        },
+        "support": {
+          "$ticketId": {
+            ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+            ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && !data.exists() && newData.exists()))"
+          }
+        },
+        "investments": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+          ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+        },
+        "transactions": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+          ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+        },
+        "withdrawals": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+          ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+        },
+        "payments": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",
+          ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+        }
+      }
+    },
+    "donationCampaigns": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+    },
+    "donations": {
+      ".read": "auth != null && auth.token.email === 'officialzoom200@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+    },
+    "notifications": {
+      "$notificationId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || auth.token.email === 'officialzoom200@gmail.com')",
+        ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+      }
+    },
+    "banned": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+      }
+    }
+  }
+}

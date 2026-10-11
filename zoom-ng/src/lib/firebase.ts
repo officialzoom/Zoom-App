@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
+
+const databaseURL = import.meta.env.VITE_FIREBASE_DATABASE_URL;
 
 const firebaseConfig = {
   apiKey: "AIzaSyC94YrR6RsZgbCtmL6C5IKgqOHFBBtMqCE",
@@ -9,9 +11,10 @@ const firebaseConfig = {
   storageBucket: "zoom-30417.firebasestorage.app",
   messagingSenderId: "929658070232",
   appId: "1:929658070232:web:bf0a2ac2ab9ba2cce6e3ad",
+  databaseURL,
 };
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = databaseURL ? getDatabase(app, databaseURL) : getDatabase(app);
 export const googleProvider = new GoogleAuthProvider();
