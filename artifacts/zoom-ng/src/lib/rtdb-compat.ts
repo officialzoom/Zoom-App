@@ -19,7 +19,7 @@ export interface DataReference {
 export interface DataDocumentSnapshot {
   readonly id: string;
   exists(): boolean;
-  data(): Record<string, any> | undefined;
+  data(): Record<string, any>;
 }
 
 export interface DataQuerySnapshot {
@@ -54,7 +54,7 @@ export async function getDoc(reference: DataReference): Promise<DataDocumentSnap
   return {
     id: reference.id,
     exists: () => snapshot.exists(),
-    data: () => snapshot.exists() && value && typeof value === "object" ? value : undefined,
+    data: () => snapshot.exists() && value && typeof value === "object" ? value : {},
   };
 }
 

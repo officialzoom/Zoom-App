@@ -4,8 +4,6 @@ import { getDatabase } from "firebase-admin/database";
 import { getFirestore } from "firebase-admin/firestore";
 
 const applyChanges = process.argv.includes("--apply");
-const ROOT_COLLECTIONS = ["donationCampaigns", "donations", "notifications", "banned"];
-
 function requiredEnvironment(name) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
@@ -105,10 +103,14 @@ async function main() {
   const app = getApp();
   const firestore = getFirestore(app);
   const database = getDatabase(app);
-  const sources = await readCollection(firestore.collection("users"), "users");
-
-  for (const collectionName of ROOT_COLLECTIONS) {
-    sources.push(...await readCollection(firestore.collection(collectionName), collectionName));
+  const sources = [];
+  for (const collectionReference of await firestore.listCollections()) {
+    sources.push(...await readCollection(collectionReference, collectionReference.id));
+  }
+  if (sources.length === 0) {
+    console.log("No Firestore documents were found. Nothing was copied or marked as migrated.");
+    console.log("Verify that the Firebase Admin project matches the active app before retrying.");
+    return;
   }
 
   const writes = [];

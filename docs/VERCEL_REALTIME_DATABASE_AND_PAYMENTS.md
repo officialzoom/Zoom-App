@@ -50,6 +50,7 @@ pnpm migrate:firestore-to-rtdb
 ```
 
 After a clean dry run, use `-- --apply`. Keep Firestore intact as a backup until the migrated app data is verified.
+If the preflight finds zero documents, do not treat that as a successful migration; first confirm the Admin credentials target the same Firebase project as the active app.
 
 ## Firebase Realtime Database rules
 
