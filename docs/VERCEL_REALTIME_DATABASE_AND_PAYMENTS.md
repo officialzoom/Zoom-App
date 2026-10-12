@@ -21,6 +21,8 @@ Configure these variables in the Vercel project:
 - `FIREBASE_DATABASE_URL`
 - `SQUADCO_SECRET_KEY`
 
+For each Vercel environment, `VITE_FIREBASE_DATABASE_URL` and `FIREBASE_DATABASE_URL` must point to the same Realtime Database. The API rejects requests if both are configured but differ. Changing the database URL can split user profiles and wallet data across database instances; confirm the intended database before changing either value.
+
 `SQUADCO_API_BASE_URL` is optional. The API defaults to SquadCo production; a key beginning with `sandbox_` selects the documented sandbox host. The secret must be added separately to Vercel; Replit Secrets do not automatically populate Vercel.
 
 The administrator email is fixed to `officialzoom200@gmail.com` to match the active frontend and `database.rules.json`. `APP_BASE_URL` is optional and can override the payment return URL origin.

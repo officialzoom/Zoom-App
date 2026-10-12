@@ -21,8 +21,17 @@ export function getFirebaseAdminApp() {
   const privateKey = requiredEnvironment("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
   const databaseURL = requiredEnvironment("FIREBASE_DATABASE_URL");
   const webProjectId = process.env.VITE_FIREBASE_PROJECT_ID;
+  const webDatabaseURL = process.env.VITE_FIREBASE_DATABASE_URL;
   if (webProjectId && webProjectId !== projectId) {
     const error = new Error("VITE_FIREBASE_PROJECT_ID and FIREBASE_PROJECT_ID must match.");
+    error.status = 503;
+    throw error;
+  }
+  if (
+    webDatabaseURL
+    && webDatabaseURL.replace(/\/+$/, "") !== databaseURL.replace(/\/+$/, "")
+  ) {
+    const error = new Error("VITE_FIREBASE_DATABASE_URL and FIREBASE_DATABASE_URL must match.");
     error.status = 503;
     throw error;
   }

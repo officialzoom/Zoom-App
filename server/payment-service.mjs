@@ -1,6 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError } from "./http.mjs";
+import { transactUserRootWithNullRetry } from "./user-root-transaction.mjs";
+import { inspectWalletBalance } from "./wallet-balance.mjs";
 
 const SANDBOX_URL = "https://sandbox-api-d.squadco.com";
 const PRODUCTION_URL = "https://api-d.squadco.com";
@@ -157,7 +159,7 @@ export async function creditVerifiedPayment(uid, transactionRef, details) {
     return { verified: false, amount: 0, status: status || "pending" };
   }
 
-  const result = await userRef.transaction((current) => {
+  const result = await transactUserRootWithNullRetry(userRef, (current) => {
     const payment = current?.payments?.[transactionRef];
     if (!payment) {
       outcome = "missing";
@@ -173,8 +175,13 @@ export async function creditVerifiedPayment(uid, transactionRef, details) {
     }
 
     const amount = Number(details.transaction_amount) / 100;
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    if (!walletBalance.valid || !Number.isSafeInteger(walletBalance.balance + amount)) {
+      outcome = "invalid-balance";
+      return;
+    }
     const next = { ...current };
-    next.walletBalance = Number(current.walletBalance ?? 0) + amount;
+    next.walletBalance = walletBalance.balance + amount;
     next.payments = {
       ...(current.payments ?? {}),
       [transactionRef]: {
@@ -197,11 +204,12 @@ export async function creditVerifiedPayment(uid, transactionRef, details) {
     };
     outcome = "credited";
     return next;
-  }, undefined, false);
+  });
 
   if (!result.committed) {
     if (outcome === "amount-mismatch") throw new HttpError(409, "Payment amount does not match the pending request.");
     if (outcome === "missing") throw new HttpError(404, "This payment request was not found.");
+    if (outcome === "invalid-balance") throw new HttpError(409, "The wallet balance cannot safely accept this payment.");
     throw new HttpError(409, "Payment could not be applied to the wallet.");
   }
 

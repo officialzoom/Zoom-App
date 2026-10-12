@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { getFirebaseAdminApp, getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError, requireNairaAmount, requireSafeId } from "./http.mjs";
 import { inspectWalletBalance } from "./wallet-balance.mjs";
+import { transactUserRootWithNullRetry } from "./user-root-transaction.mjs";
 
 const MAX_INVESTMENT = 30_000;
 const ASSETS = {
@@ -80,14 +81,14 @@ export async function registerUser(user, input) {
     if (referrerEntry) {
       const [referrerUid] = referrerEntry;
       const referrerRef = database.ref(`users/${referrerUid}`);
-      await referrerRef.transaction((profile) => {
+      await transactUserRootWithNullRetry(referrerRef, (profile) => {
         if (!profile || profile.referrals?.[uid]) return profile;
         return {
           ...profile,
           referrals: { ...(profile.referrals ?? {}), [uid]: true },
           referralCount: Number(profile.referralCount ?? 0) + 1,
         };
-      }, undefined, false);
+      });
     }
   }
   return { created: Boolean(result.committed && created) };
@@ -109,7 +110,7 @@ export async function creditUserWallet(admin, input) {
   let outcome = "missing";
   let balanceIssue = null;
   let balanceType = null;
-  const result = await userRef.transaction((current) => {
+  const result = await transactUserRootWithNullRetry(userRef, (current) => {
     if (!current) {
       outcome = "missing";
       return;
@@ -154,7 +155,7 @@ export async function creditUserWallet(admin, input) {
         },
       },
     };
-  }, undefined, false);
+  });
 
   if (outcome === "missing") {
     const current = await userRef.get();
@@ -206,7 +207,7 @@ export async function reviewWithdrawal(admin, input) {
     : null;
   const reviewedAt = Date.now();
   let outcome = "missing";
-  const result = await userRef.transaction((current) => {
+  const result = await transactUserRootWithNullRetry(userRef, (current) => {
     const withdrawal = current?.withdrawals?.[withdrawalId];
     if (!withdrawal) {
       outcome = "missing";
@@ -227,8 +228,9 @@ export async function reviewWithdrawal(admin, input) {
       outcome = "invalid-amount";
       return;
     }
-    const balance = Number(current.walletBalance ?? 0);
-    if (!Number.isSafeInteger(balance) || balance < 0 || (action === "reject" && !Number.isSafeInteger(balance + amount))) {
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    const balance = walletBalance.balance;
+    if (!walletBalance.valid || (action === "reject" && !Number.isSafeInteger(balance + amount))) {
       outcome = "invalid-balance";
       return;
     }
@@ -268,7 +270,7 @@ export async function reviewWithdrawal(admin, input) {
 
     outcome = "reviewed";
     return next;
-  }, undefined, false);
+  });
 
   if (outcome === "missing") throw new HttpError(404, "The withdrawal request was not found.");
   if (outcome === "already-reviewed-differently") {
@@ -346,7 +348,7 @@ export async function createInvestment(uid, input) {
   const endDate = new Date(now + lockDays * 24 * 60 * 60 * 1000).toISOString();
   let outcome = "missing";
 
-  const result = await userRef.transaction((current) => {
+  const result = await transactUserRootWithNullRetry(userRef, (current) => {
     if (!current) {
       outcome = "missing";
       return;
@@ -391,7 +393,7 @@ export async function createInvestment(uid, input) {
         },
       },
     };
-  }, undefined, false);
+  });
 
   if (!result.committed) {
     if (outcome === "insufficient") throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
@@ -449,12 +451,17 @@ export async function createWithdrawal(uid, input) {
   const transactionId = recordId(database, `users/${uid}/transactions`);
   const now = Date.now();
   let outcome = "missing";
-  const result = await userRef.transaction((current) => {
+  const result = await transactUserRootWithNullRetry(userRef, (current) => {
     if (!current) {
       outcome = "missing";
       return;
     }
-    const balance = Number(current.walletBalance ?? 0);
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    const balance = walletBalance.balance;
+    if (!walletBalance.valid) {
+      outcome = "invalid-balance";
+      return;
+    }
     if (amount > balance) {
       outcome = "insufficient";
       return;
@@ -490,11 +497,12 @@ export async function createWithdrawal(uid, input) {
         },
       },
     };
-  }, undefined, false);
+  });
 
   if (!result.committed) {
     if (outcome === "insufficient") throw new HttpError(400, "Insufficient balance.");
     if (outcome === "referrals") throw new HttpError(400, "You need at least 5 referrals to withdraw.");
+    if (outcome === "invalid-balance") throw new HttpError(409, "Your wallet balance needs review before you can withdraw.");
     throw new HttpError(404, "Your account could not be found.");
   }
   return { message: "Withdrawal request submitted. Admin has 12 hours to approve." };
@@ -512,7 +520,7 @@ export async function createDonation(uid, input) {
   const transactionId = `donation-${requestHash}`;
   const createdAt = Date.now();
   let userOutcome = "missing";
-  const userResult = await userRef.transaction((current) => {
+  const userResult = await transactUserRootWithNullRetry(userRef, (current) => {
     if (!current) {
       userOutcome = "missing";
       return;
@@ -532,8 +540,9 @@ export async function createDonation(uid, input) {
         return current;
       }
     }
-    const balance = Number(current.walletBalance ?? 0);
-    if (!Number.isSafeInteger(balance) || balance < 0) {
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    const balance = walletBalance.balance;
+    if (!walletBalance.valid) {
       userOutcome = "invalid-balance";
       return;
     }
@@ -561,7 +570,7 @@ export async function createDonation(uid, input) {
         },
       },
     };
-  }, undefined, false);
+  });
 
   if (userOutcome === "missing") throw new HttpError(404, "Your account could not be found.");
   if (userOutcome === "request-conflict") throw new HttpError(409, "This donation request ID was already used.");
@@ -574,14 +583,15 @@ export async function createDonation(uid, input) {
 
   const refundPendingDonation = async () => {
     let refundOutcome = "pending";
-    const refundResult = await userRef.transaction((current) => {
+    const refundResult = await transactUserRootWithNullRetry(userRef, (current) => {
       const donation = current?.donations?.[donationId];
       if (!donation || donation.status !== "pending") {
         refundOutcome = donation?.status === "failed" ? "refunded" : "not-pending";
         return current;
       }
-      const balance = Number(current.walletBalance ?? 0);
-      if (!Number.isSafeInteger(balance + amount)) {
+      const walletBalance = inspectWalletBalance(current.walletBalance);
+      const balance = walletBalance.balance;
+      if (!walletBalance.valid || !Number.isSafeInteger(balance + amount)) {
         refundOutcome = "invalid-balance";
         return;
       }
@@ -595,7 +605,7 @@ export async function createDonation(uid, input) {
           [transactionId]: { ...current.transactions?.[transactionId], status: "failed" },
         },
       };
-    }, undefined, false);
+    });
     if (!refundResult.committed && refundOutcome !== "refunded") {
       throw new HttpError(500, "The donation could not be completed or safely refunded.");
     }
