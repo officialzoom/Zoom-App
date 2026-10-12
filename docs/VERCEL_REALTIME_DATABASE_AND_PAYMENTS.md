@@ -1,4 +1,4 @@
-# Vercel, Realtime Database, and SquadCo
+ # Vercel, Realtime Database, and SquadCo
 
 The active Zoom NG app uses Firebase Authentication and Firebase Realtime Database. Wallet funding, investment debits, withdrawals, registration, and donations are handled by Vercel serverless routes under `/api`. The browser never receives the SquadCo secret. No Firebase Cloud Function is required.
 
