@@ -269,11 +269,15 @@ export default function Admin() {
                   <div className="flex items-center gap-3">
                     <div className="text-right hidden sm:block">
                       <p className="text-xs text-gray-400">Balance</p>
-                      <p className="font-bold text-gray-900">{formatCurrency(u.wallet?.balance ?? 0)}</p>
+                      <p className="font-bold text-gray-900">
+                        {u.wallet?.balanceValid === false ? "Needs review" : formatCurrency(u.wallet?.balance ?? 0)}
+                      </p>
                     </div>
                     <Button
                       size="sm"
                       variant="outline"
+                      disabled={u.wallet?.balanceValid === false}
+                      title={u.wallet?.balanceValid === false ? "This wallet balance must be reviewed before crediting" : undefined}
                       onClick={() => {
                         setCreditUser({ id: u.id, displayName: u.displayName, balance: u.wallet?.balance ?? 0 });
                         setCreditAmount("");
@@ -281,7 +285,8 @@ export default function Admin() {
                       }}
                       className="rounded-xl text-green-700 border-green-200 hover:bg-green-50"
                     >
-                      <Wallet className="w-4 h-4 mr-1" /> Credit
+                      <Wallet className="w-4 h-4 mr-1" />
+                      {u.wallet?.balanceValid === false ? "Review balance" : "Credit"}
                     </Button>
                     {u.banned ? (
                       <Button size="sm" variant="outline" onClick={() => unbanUser(u.id)} className="rounded-xl text-green-600 border-green-200 hover:bg-green-50">

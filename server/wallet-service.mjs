@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { getFirebaseAdminApp, getFirebaseAdminAuth, getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError, requireNairaAmount, requireSafeId } from "./http.mjs";
+import { inspectWalletBalance } from "./wallet-balance.mjs";
 
 const MAX_INVESTMENT = 30_000;
 const ASSETS = {
@@ -106,6 +107,8 @@ export async function creditUserWallet(admin, input) {
   const transactionId = `admin-credit-${requestId}`;
   const creditedAt = Date.now();
   let outcome = "missing";
+  let balanceIssue = null;
+  let balanceType = null;
   const result = await userRef.transaction((current) => {
     if (!current) {
       outcome = "missing";
@@ -123,9 +126,12 @@ export async function creditUserWallet(admin, input) {
       return outcome === "already-credited" ? current : undefined;
     }
 
-    const balance = Number(current.walletBalance ?? 0);
-    if (!Number.isSafeInteger(balance) || balance < 0 || !Number.isSafeInteger(balance + amount)) {
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    const balance = walletBalance.balance;
+    if (!walletBalance.valid || !Number.isSafeInteger(balance + amount)) {
       outcome = "invalid-balance";
+      balanceIssue = walletBalance.issue ?? "credit-overflow";
+      balanceType = walletBalance.valueType;
       return;
     }
 
@@ -156,12 +162,22 @@ export async function creditUserWallet(admin, input) {
       logUserProfileContext("admin-credit-missing", uid);
       throw new HttpError(404, "The selected user profile no longer exists. Refresh the Admin user list and try again.");
     }
+    const walletBalance = inspectWalletBalance(current.val()?.walletBalance);
+    logUserProfileContext("admin-credit-conflict", uid, {
+      outcome: "transaction-saw-missing-but-profile-exists",
+      walletBalanceIssue: walletBalance.issue,
+      walletBalanceType: walletBalance.valueType,
+    });
     throw new HttpError(409, "The user's wallet changed during this request. Refresh the Admin page and try again.");
   }
   if (outcome === "request-conflict") {
     throw new HttpError(409, "This credit request ID was already used for a different wallet credit.");
   }
   if (outcome === "invalid-balance") {
+    logUserProfileContext("admin-credit-invalid-balance", uid, {
+      walletBalanceIssue: balanceIssue,
+      walletBalanceType: balanceType,
+    });
     throw new HttpError(409, "The user's wallet balance cannot safely accept this credit.");
   }
   if (!result.committed && outcome !== "already-credited") {
@@ -292,6 +308,7 @@ export async function listAdminUsers() {
   return Object.entries(records).map(([id, data]) => {
     const profile = data && typeof data === "object" ? data : {};
     const displayName = profile.displayName || "User";
+    const walletBalance = inspectWalletBalance(profile.walletBalance);
     return {
       id,
       displayName,
@@ -302,7 +319,7 @@ export async function listAdminUsers() {
       investorLevel: profile.investorLevel ?? "Bronze",
       memberSince: profile.memberSince ?? "—",
       avatarInitials: displayName.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase(),
-      wallet: { balance: Number(profile.walletBalance ?? 0) },
+      wallet: { balance: walletBalance.balance, balanceValid: walletBalance.valid },
     };
   });
 }
@@ -334,8 +351,9 @@ export async function createInvestment(uid, input) {
       outcome = "missing";
       return;
     }
-    const balance = Number(current.walletBalance ?? 0);
-    if (!Number.isSafeInteger(balance) || balance < 0) {
+    const walletBalance = inspectWalletBalance(current.walletBalance);
+    const balance = walletBalance.balance;
+    if (!walletBalance.valid) {
       outcome = "invalid-balance";
       return;
     }
@@ -378,15 +396,29 @@ export async function createInvestment(uid, input) {
   if (!result.committed) {
     if (outcome === "insufficient") throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
     if (outcome === "invalid-balance") {
+      const current = await userRef.get();
+      const walletBalance = inspectWalletBalance(current.val()?.walletBalance);
+      logUserProfileContext("investment-invalid-balance", uid, {
+        walletBalanceIssue: walletBalance.issue,
+        walletBalanceType: walletBalance.valueType,
+      });
       throw new HttpError(409, "Your wallet balance needs review before you can invest. Contact support.");
     }
     const current = await userRef.get();
     if (current.exists()) {
-      const balance = Number(current.val()?.walletBalance ?? 0);
-      if (!Number.isSafeInteger(balance) || balance < 0) {
+      const walletBalance = inspectWalletBalance(current.val()?.walletBalance);
+      const balance = walletBalance.balance;
+      if (!walletBalance.valid) {
+        logUserProfileContext("investment-invalid-balance", uid, {
+          walletBalanceIssue: walletBalance.issue,
+          walletBalanceType: walletBalance.valueType,
+        });
         throw new HttpError(409, "Your wallet balance needs review before you can invest. Contact support.");
       }
       if (amount > balance) throw new HttpError(400, "Insufficient wallet balance. Please add funds first.");
+      logUserProfileContext("investment-conflict", uid, {
+        outcome: "transaction-did-not-commit-with-valid-balance",
+      });
       throw new HttpError(409, "Your wallet changed during this request. Refresh the page and try again.");
     }
     logUserProfileContext("investment-missing", uid);
