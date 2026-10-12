@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "wouter";
 import NavBar from "@/components/NavBar";
 import { useGetUserProfile, useGetBanks, useAddBank, useRemoveBank, useGetWallet, useGetDashboardSummary, useWithdrawFromWallet, getGetUserProfileQueryKey, getGetBanksQueryKey, getGetWalletQueryKey, sendSupportMessage } from "@/lib/firebase-api";
@@ -33,6 +33,7 @@ export default function Profile() {
 
   const [bankForm, setBankForm] = useState({ bankName: "", accountName: "", accountNumber: "" });
   const [withdrawForm, setWithdrawForm] = useState({ amount: "", bankId: "" });
+  const withdrawalRequest = useRef<{ signature: string; id: string } | null>(null);
   const [isBankOpen, setIsBankOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [supportMsg, setSupportMsg] = useState("");
@@ -64,8 +65,13 @@ export default function Profile() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-    withdraw.mutate({ data: { amount: Number(withdrawForm.amount), bankId: withdrawForm.bankId } }, {
+    const signature = JSON.stringify([Number(withdrawForm.amount), withdrawForm.bankId]);
+    if (withdrawalRequest.current?.signature !== signature) {
+      withdrawalRequest.current = { signature, id: crypto.randomUUID() };
+    }
+    withdraw.mutate({ data: { amount: Number(withdrawForm.amount), bankId: withdrawForm.bankId, requestId: withdrawalRequest.current.id } }, {
       onSuccess: (data: any) => {
+        withdrawalRequest.current = null;
         const msg = data?.message || "Withdrawal request submitted for admin approval";
         toast({ title: "Withdrawal Submitted", description: msg });
         setIsWithdrawOpen(false);

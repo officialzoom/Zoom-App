@@ -11,6 +11,7 @@
     "build": "pnpm run typecheck && pnpm --filter @workspace/zoom-ng run build",
     "typecheck:libs": "tsc --build",
     "migrate:firestore-to-rtdb": "node scripts/migrate-firestore-to-rtdb.mjs",
+    "migrate:wallet-balances": "node scripts/migrate-wallet-balances.mjs",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,

@@ -14,6 +14,11 @@
             ".write": "auth != null && (auth.token.email === 'officialzoom200@gmail.com' || (auth.uid === $uid && root.child('users').child(auth.uid).child('banned').val() !== true))"
           }
         },
+        "wallets": {
+          "$uid": {
+            ".read": "auth != null && auth.token.email === 'officialzoom200@gmail.com'"
+          }
+        },
         "ads": {
           "$adId": {
             ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'officialzoom200@gmail.com')",

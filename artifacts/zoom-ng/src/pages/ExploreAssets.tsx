@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import NavBar from "@/components/NavBar";
 import { useGetAssets } from "@/lib/firebase-api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,6 +108,7 @@ export default function ExploreAssets() {
   const [investDays, setInvestDays] = useState(30);
 
   const createInvestment = useCreateInvestment();
+  const investmentRequest = useRef<{ signature: string; id: string } | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -159,8 +160,13 @@ export default function ExploreAssets() {
       });
       return;
     }
-    createInvestment.mutate({ data: { assetId: selectedAsset.id, amount, lockDays: days } }, {
+    const signature = JSON.stringify([selectedAsset.id, amount, days]);
+    if (investmentRequest.current?.signature !== signature) {
+      investmentRequest.current = { signature, id: crypto.randomUUID() };
+    }
+    createInvestment.mutate({ data: { assetId: selectedAsset.id, amount, lockDays: days, requestId: investmentRequest.current.id } }, {
       onSuccess: () => {
+        investmentRequest.current = null;
         toast({ title: "Investment Successful!", description: `You invested ${formatCurrency(amount)} in ${selectedAsset.label}` });
         setInvestOpen(false);
         [getGetInvestmentsQueryKey(), getGetWalletQueryKey(), getGetDashboardSummaryQueryKey()].forEach(k => queryClient.invalidateQueries({ queryKey: k }));

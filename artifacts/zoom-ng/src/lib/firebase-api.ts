@@ -337,13 +337,12 @@ export function useGetWallet() {
     queryKey: getGetWalletQueryKey(),
     queryFn: async () => {
       const uid = getUid();
-      const [userSnap, invSnap, txSnap] = await Promise.all([
-        getDoc(userDoc(uid)),
+      const [walletState, invSnap, txSnap] = await Promise.all([
+        postApi<{ balance: number }>("/api/wallet/balance", {}),
         getDocs(userCollection(uid, "investments")),
         getDocs(userCollection(uid, "transactions")),
       ]);
-      const userData = userSnap.data() ?? {};
-      const balance = Number(userData.walletBalance ?? 0);
+      const balance = walletState.balance;
 
       let activeInvestmentsValue = 0;
       let totalEarnings = 0;
@@ -377,13 +376,12 @@ export function useGetDashboardSummary() {
     queryKey: getGetDashboardSummaryQueryKey(),
     queryFn: async () => {
       const uid = getUid();
-      const [userSnap, invSnap, txSnap] = await Promise.all([
-        getDoc(userDoc(uid)),
+      const [walletState, invSnap, txSnap] = await Promise.all([
+        postApi<{ balance: number }>("/api/wallet/balance", {}),
         getDocs(userCollection(uid, "investments")),
         getDocs(query(userCollection(uid, "transactions"), orderBy("__name__"))),
       ]);
-      const userData = userSnap.data() ?? {};
-      const balance = Number(userData.walletBalance ?? 0);
+      const balance = walletState.balance;
 
       let activeInvestmentsValue = 0;
       let totalEarnings = 0;
@@ -511,8 +509,8 @@ export function useRemoveBank() {
 export function useCreateInvestment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { data: { assetId: string; amount: number; lockDays: number } }) => {
-      const { assetId, amount, lockDays } = input.data;
+    mutationFn: async (input: { data: { assetId: string; amount: number; lockDays: number; requestId: string } }) => {
+      const { assetId, amount, lockDays, requestId } = input.data;
       const tier = ASSET_TIER_MAP[assetId];
       if (!tier) throw new Error("Invalid asset selected");
       if (!Number.isInteger(lockDays) || lockDays < 1 || lockDays > tier.durationDays) {
@@ -520,7 +518,7 @@ export function useCreateInvestment() {
       }
       if (amount < tier.entryAmount) throw new Error(`Minimum investment for this asset is ₦${tier.entryAmount.toLocaleString("en-NG")}`);
       if (amount > MAX_INVESTMENT) throw new Error(`Maximum investment is ₦${MAX_INVESTMENT.toLocaleString("en-NG")}`);
-      const result = await postApi<{ investment: Investment }>("/api/wallet/invest", { assetId, amount, lockDays });
+      const result = await postApi<{ investment: Investment }>("/api/wallet/invest", { assetId, amount, lockDays, requestId });
       return result.investment;
     },
     onSuccess: () => {
@@ -537,9 +535,9 @@ export function useCreateInvestment() {
 export function useWithdrawFromWallet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { data: { amount: number; bankId: string } }) => {
-      const { amount, bankId } = input.data;
-      return postApi<{ message: string }>("/api/wallet/withdraw", { amount, bankId });
+    mutationFn: async (input: { data: { amount: number; bankId: string; requestId: string } }) => {
+      const { amount, bankId, requestId } = input.data;
+      return postApi<{ message: string }>("/api/wallet/withdraw", { amount, bankId, requestId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });

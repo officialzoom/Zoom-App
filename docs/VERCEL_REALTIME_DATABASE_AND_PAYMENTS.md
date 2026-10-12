@@ -4,6 +4,24 @@ The active Zoom NG app uses Firebase Authentication and Firebase Realtime Databa
 
 The admin portal can credit a user's wallet through an authenticated Vercel API route. Each credit is checked against the configured admin account, applied atomically, and recorded in the user's transaction history with its reason and administrator identity. Do not edit wallet balances directly in the database.
 
+## Wallet state migration
+
+Financial routes use the dedicated `wallets/{uid}` state instead of transacting the entire `users/{uid}` profile. It contains a numeric `balance` and operation idempotency records; the profile, investments, and transaction history remain at their existing paths. Replaying the same operation ID repairs its associated records without applying the balance change twice.
+
+Before deploying code that reads the new wallet state, temporarily pause wallet-changing actions and load the same Vercel Production environment used by the API. Preview the migration first:
+
+```sh
+pnpm migrate:wallet-balances
+```
+
+The default is a dry run. Resolve every reported conflict by reviewing the authoritative user balance; do not reset, truncate, or manually guess a balance. Once the preview reports the expected accounts and no conflicts, apply it while wallet-changing actions remain paused:
+
+```sh
+pnpm migrate:wallet-balances -- --apply
+```
+
+Then deploy the application and `database.rules.json`, verify balances and a test credit/investment, and resume wallet operations. Rerunning the migration is safe for schema-versioned wallets and does not overwrite them. Existing wallets are never replaced by this script.
+
 ## Vercel environment
 
 Configure these variables in the Vercel project:

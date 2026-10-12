@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { AssetTier, useCreateInvestment, getGetInvestmentsQueryKey, getGetWalletQueryKey, getGetDashboardSummaryQueryKey } from "@/lib/firebase-api";
 import { formatCurrency, formatPercentage } from "@/lib/formatting";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export default function AssetTierCard({ asset }: AssetTierCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createInvestment = useCreateInvestment();
+  const investmentRequest = useRef<{ signature: string; id: string } | null>(null);
 
   const progress = (asset.slotsUsed / asset.totalSlots) * 100;
   const isSoldOut = asset.slotsUsed >= asset.totalSlots;
@@ -37,10 +38,20 @@ export default function AssetTierCard({ asset }: AssetTierCardProps) {
       return;
     }
 
+    const signature = JSON.stringify([asset.id, numAmount, asset.durationDays]);
+    if (investmentRequest.current?.signature !== signature) {
+      investmentRequest.current = { signature, id: crypto.randomUUID() };
+    }
     createInvestment.mutate({
-      data: { assetId: asset.id, amount: numAmount, lockDays: asset.durationDays }
+      data: {
+        assetId: asset.id,
+        amount: numAmount,
+        lockDays: asset.durationDays,
+        requestId: investmentRequest.current.id,
+      }
     }, {
       onSuccess: () => {
+        investmentRequest.current = null;
         toast({ title: "Investment Successful", description: `You have invested in ${asset.label}` });
         setIsOpen(false);
         queryClient.invalidateQueries({ queryKey: getGetInvestmentsQueryKey() });

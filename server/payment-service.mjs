@@ -1,8 +1,7 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { getRealtimeDatabase } from "./firebase-admin.mjs";
 import { HttpError } from "./http.mjs";
-import { transactUserRootWithNullRetry } from "./user-root-transaction.mjs";
-import { inspectWalletBalance } from "./wallet-balance.mjs";
+import { applyWalletMutation } from "./wallet-state.mjs";
 
 const SANDBOX_URL = "https://sandbox-api-d.squadco.com";
 const PRODUCTION_URL = "https://api-d.squadco.com";
@@ -143,10 +142,7 @@ export async function creditVerifiedPayment(uid, transactionRef, details) {
   const indexed = referenceIndex.val();
   if (!indexed || indexed.uid !== uid) throw new HttpError(404, "This payment request was not found.");
 
-  const userRef = database.ref(`users/${uid}`);
-  const transactionId = database.ref(`users/${uid}/transactions`).push().key;
-  if (!transactionId) throw new HttpError(500, "A wallet transaction ID could not be created.");
-  let outcome = "missing";
+  const transactionId = `deposit-${createHash("sha256").update(transactionRef).digest("hex").slice(0, 32)}`;
   const requestedAmount = Number(indexed.amount);
   if (!validateVerifiedPayment(transactionRef, requestedAmount, details)) {
     const status = String(details?.transaction_status ?? "").toLowerCase();
@@ -159,65 +155,41 @@ export async function creditVerifiedPayment(uid, transactionRef, details) {
     return { verified: false, amount: 0, status: status || "pending" };
   }
 
-  const result = await transactUserRootWithNullRetry(userRef, (current) => {
-    const payment = current?.payments?.[transactionRef];
-    if (!payment) {
-      outcome = "missing";
-      return;
-    }
-    if (["success", "completed"].includes(String(payment.status).toLowerCase())) {
-      outcome = "already-credited";
-      return current;
-    }
-    if (Number(payment.amount) !== requestedAmount) {
-      outcome = "amount-mismatch";
-      return;
-    }
-
-    const amount = Number(details.transaction_amount) / 100;
-    const walletBalance = inspectWalletBalance(current.walletBalance);
-    if (!walletBalance.valid || !Number.isSafeInteger(walletBalance.balance + amount)) {
-      outcome = "invalid-balance";
-      return;
-    }
-    const next = { ...current };
-    next.walletBalance = walletBalance.balance + amount;
-    next.payments = {
-      ...(current.payments ?? {}),
-      [transactionRef]: {
+  const paymentSnapshot = await database.ref(`users/${uid}/payments/${transactionRef}`).get();
+  const payment = paymentSnapshot.val();
+  if (!payment) throw new HttpError(404, "This payment request was not found.");
+  if (Number(payment.amount) !== requestedAmount) {
+    throw new HttpError(409, "Payment amount does not match the pending request.");
+  }
+  const amount = Number(details.transaction_amount) / 100;
+  const result = await applyWalletMutation(
+    uid,
+    `deposit-${transactionRef}`,
+    amount,
+    JSON.stringify({ type: "deposit", transactionRef, amount }),
+    (paidAt) => ({
+      [`users/${uid}/payments/${transactionRef}`]: {
         ...payment,
         status: "success",
-        paidAt: Date.now(),
+        paidAt,
         gatewayReference: details.gateway_transaction_ref ?? details.transaction_ref,
       },
-    };
-    next.transactions = {
-      ...(current.transactions ?? {}),
-      [transactionId]: {
+      [`users/${uid}/transactions/${transactionId}`]: {
         type: "deposit",
         label: "SquadCo Wallet Funding",
         amount,
-        date: Date.now(),
+        date: paidAt,
         status: "completed",
         transactionRef,
       },
-    };
-    outcome = "credited";
-    return next;
-  });
+      [`paymentRefs/${transactionRef}/status`]: "success",
+    }),
+  );
 
-  if (!result.committed) {
-    if (outcome === "amount-mismatch") throw new HttpError(409, "Payment amount does not match the pending request.");
-    if (outcome === "missing") throw new HttpError(404, "This payment request was not found.");
-    if (outcome === "invalid-balance") throw new HttpError(409, "The wallet balance cannot safely accept this payment.");
-    throw new HttpError(409, "Payment could not be applied to the wallet.");
-  }
-
-  await database.ref(`paymentRefs/${transactionRef}/status`).set("success");
   return {
     verified: true,
     amount: requestedAmount,
-    alreadyCredited: outcome === "already-credited",
+    alreadyCredited: result.alreadyApplied,
   };
 }
 
