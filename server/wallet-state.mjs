@@ -75,12 +75,17 @@ export async function applyWalletMutation(
       );
     }
 
+    const freshValue = freshWallet.val();
     let callbackSawMissing = false;
     result = await walletRef.transaction(
       (current) => {
         callbackSawMissing = current == null;
+        // The Admin SDK can invoke a transaction callback with a stale null
+        // cache even after a fresh read confirms the wallet exists. Seed the
+        // transaction with that confirmed value instead of aborting it.
+        const transactionValue = current ?? freshValue;
         const update = calculateWalletStateUpdate(
-          current,
+          transactionValue,
           operationId,
           delta,
           fingerprint,
