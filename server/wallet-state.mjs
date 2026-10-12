@@ -49,6 +49,13 @@ export async function applyWalletMutation(uid, operationId, delta, fingerprint, 
   let retryCount = 0;
   let result;
   while (true) {
+    // Refresh the SDK cache before each attempt. A warm serverless instance can
+    // retain a stale missing value after another request has initialized the wallet.
+    const freshWallet = await walletRef.get();
+    if (!freshWallet.exists()) {
+      throw new HttpError(503, "Your wallet has not been migrated yet. Please try again after wallet setup is complete.");
+    }
+
     let callbackSawMissing = false;
     result = await walletRef.transaction((current) => {
       callbackSawMissing = current == null;
